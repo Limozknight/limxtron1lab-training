@@ -182,6 +182,7 @@ This project includes comprehensive Chinese documentation for developers from be
 #### 工作流文档 / Workflow Documentation
 - **[10_训练工作流指南](docs/10_Training_Workflow_Guide.md)** - 完整训练启动和流程
 - **[11_常见问题解答](docs/11_FAQ.md)** - 模型输出、视频录制、工时估算、文件修改等
+- **[12_limx_base_env_cfg_QA](docs/12_limx_base_env_cfg_QA.md)** - `limx_base_env_cfg.py` 配置详解与任务改动指引
 
 ### 🎯 关键问题快速查找
 
