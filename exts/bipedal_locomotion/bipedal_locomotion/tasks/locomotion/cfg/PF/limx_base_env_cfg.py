@@ -261,6 +261,15 @@ class ObservarionsCfg:
             scale=1.0,
         )
 
+        # ============= 2.2 修改：姿态稳定性观测 =============
+        base_orientation_stability = ObsTerm(
+            func=mdp.projected_gravity,  # 使用现有的重力投影观测函数
+            params={},  # 移除不存在的参数
+            noise=GaussianNoise(mean=0.0, std=0.005),
+            clip=(-100.0, 100.0),
+            scale=5.0,
+        )
+
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
