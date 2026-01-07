@@ -146,6 +146,7 @@ class PFTerrainTraversalEnvCfg(PFBaseEnvCfg):
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(0.0, 10.0),
+            scale=0.1,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
         self.observations.critic.heights = ObsTerm(
             func=mdp.height_scan,
@@ -159,6 +160,7 @@ class PFTerrainTraversalEnvCfg(PFBaseEnvCfg):
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(0.0, 10.0),
+            scale=0.1,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
 
         # 奖励针对粗糙地形的调整 / Reward tweaks for terrain traversal
@@ -251,6 +253,7 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(0.0, 10.0),
+            scale=0.1,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
         self.observations.critic.heights = ObsTerm(
             func=mdp.height_scan,
@@ -264,6 +267,7 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(0.0, 10.0),
+            scale=0.1,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
 
         # ========== V2 修改 1: 降低动作尺度 ==========

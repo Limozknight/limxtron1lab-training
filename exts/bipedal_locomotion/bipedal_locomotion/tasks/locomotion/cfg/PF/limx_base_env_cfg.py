@@ -166,13 +166,13 @@ class ObservarionsCfg:
             func=mdp.base_ang_vel,  # 基座角速度函数 / Base angular velocity function
             noise=GaussianNoise(mean=0.0, std=0.05),  # 高斯噪声 / Gaussian noise
             clip=(-100.0, 100.0),  # 数值裁剪范围 / Value clipping range
-            scale=0.25,  # 缩放因子 / Scaling factor
+            scale=0.1,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
         proj_gravity = ObsTerm(
             func=mdp.projected_gravity,  # 投影重力函数 / Projected gravity function
             noise=GaussianNoise(mean=0.0, std=0.025),  # 噪声配置 / Noise configuration
             clip=(-100.0, 100.0),  # 裁剪范围 / Clipping range
-            scale=1.0,  # 缩放因子 / Scaling factor
+            scale=0.5,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
 
         # 机器人关节测量 / Robot joint measurements
@@ -186,7 +186,7 @@ class ObservarionsCfg:
             func=mdp.joint_vel,  # 关节速度函数 / Joint velocity function
             noise=GaussianNoise(mean=0.0, std=0.01),  # 噪声配置 / Noise configuration
             clip=(-100.0, 100.0),  # 裁剪范围 / Clipping range
-            scale=0.05,  # 缩放因子 / Scaling factor
+            scale=0.02,  # 缩放因子（降低以稳定训练）/ Scaling factor (reduced for stability)
         )
 
         # 上一步动作 / Last action
