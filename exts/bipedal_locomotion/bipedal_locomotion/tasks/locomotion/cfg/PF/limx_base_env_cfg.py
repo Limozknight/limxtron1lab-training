@@ -264,7 +264,8 @@ class ObservarionsCfg:
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
-            self.history_length = 11  # 历史长度为11步 / History length of 11 steps
+            # 与 PPO 配置的 obs_history_len=10 对齐，避免历史维度与编码器假设不一致
+            self.history_length = 10  # 历史长度为10步 / History length of 10 steps
             self.flatten_history_dim = False  # 不展平历史维度 / Don't flatten history dimension
 
     @configclass

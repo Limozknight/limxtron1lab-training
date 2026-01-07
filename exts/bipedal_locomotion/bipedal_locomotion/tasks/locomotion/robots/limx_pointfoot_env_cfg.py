@@ -153,6 +153,14 @@ class PFTerrainTraversalEnvCfg(PFBaseEnvCfg):
             clip=(0.0, 10.0),
         )
 
+        # 历史观测加入高度扫描，保证历史维度与策略维度一致
+        self.observations.obsHistory.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+        )
+
         # 奖励针对粗糙地形的调整 / Reward tweaks for terrain traversal
         self.rewards.rew_lin_vel_xy_precise.weight = 6.0
         self.rewards.rew_ang_vel_z_precise.weight = 3.5
@@ -247,6 +255,14 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         self.observations.critic.heights = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(0.0, 10.0),
+        )
+
+        # 历史观测加入高度扫描，保证历史维度与策略维度一致
+        self.observations.obsHistory.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(0.0, 10.0),
         )
 
