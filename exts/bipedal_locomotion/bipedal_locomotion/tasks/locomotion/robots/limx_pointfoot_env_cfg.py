@@ -326,6 +326,143 @@ class PFTerrainTraversalEnvCfgV2_PLAY(PFTerrainTraversalEnvCfgV2):
 
 
 ##############################
+# 任务2.4：台阶遍历环境 / Task 2.4: Stair Traversal Environment
+##############################
+
+@configclass
+class PFStairTraversalEnvCfg(PFBaseEnvCfg):
+    """Task 2.4 stair traversal training configuration with height scanner for terrain adaptation"""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        # Environment configuration
+        self.scene.env_spacing = 3.0
+        self.scene.num_envs = 2048
+
+        # Use stairs terrain generator
+        self.scene.terrain.terrain_type = "generator"
+        self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
+        self.curriculum.terrain_levels = None
+
+        # Height scanner for stair detection
+        self.scene.height_scanner = RayCasterCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/base_Link",
+            attach_yaw_only=True,
+            pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.6, 0.6]),
+            debug_vis=False,
+            mesh_prim_paths=["/World/ground"],
+        )
+        self.scene.height_scanner.update_period = self.decimation * self.sim.dt
+
+        # Height observations for policy and critic
+        self.observations.policy.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+            scale=0.1,  # Scaling factor (reduced for stability)
+        )
+        self.observations.critic.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(0.0, 10.0),
+        )
+
+        # Height observations in history for temporal context
+        self.observations.obsHistory.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+            scale=0.1,  # Scaling factor (reduced for stability)
+        )
+
+        # Adjust velocity command ranges for stairs (more conservative)
+        self.commands.base_velocity.ranges.lin_vel_x = (0.3, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.3, 0.3)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.3, 0.3)
+
+        # Reward adjustments for stair climbing
+        self.rewards.rew_lin_vel_xy_precise.weight = 5.0
+        self.rewards.rew_ang_vel_z_precise.weight = 2.5
+
+        # Height penalty with terrain awareness
+        self.rewards.pen_base_height.func = mdp.base_height_rough_l2
+        self.rewards.pen_base_height.weight = -10.0
+        self.rewards.pen_base_height.params = {
+            "target_height": 0.78,
+            "sensor_cfg": SceneEntityCfg("height_scanner"),
+            "asset_cfg": SceneEntityCfg("robot"),
+        }
+
+        # Increased posture constraints for stairs
+        self.rewards.pen_flat_orientation.weight = -4.0
+        self.rewards.pen_feet_regulation.weight = -0.3
+        self.rewards.foot_landing_vel.weight = -1.5
+        self.rewards.pen_undesired_contacts.weight = -1.5
+        self.rewards.pen_action_smoothness.weight = -0.15
+
+        # Disable random pushes for stable stair climbing
+        self.events.push_robot = None
+
+
+@configclass
+class PFStairTraversalEnvCfg_PLAY(PFBaseEnvCfg_PLAY):
+    """Task 2.4 stair traversal testing configuration with reduced environments"""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        # Environment configuration
+        self.scene.env_spacing = 3.0
+        self.scene.num_envs = 64
+
+        # Use stairs terrain generator
+        self.scene.terrain.terrain_type = "generator"
+        self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG
+        self.curriculum.terrain_levels = None
+
+        # Height scanner for stair detection
+        self.scene.height_scanner = RayCasterCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/base_Link",
+            attach_yaw_only=True,
+            pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.6, 0.6]),
+            debug_vis=False,
+            mesh_prim_paths=["/World/ground"],
+        )
+        self.scene.height_scanner.update_period = self.decimation * self.sim.dt
+
+        # Height observations
+        self.observations.policy.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+            scale=0.1,
+        )
+        self.observations.critic.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(0.0, 10.0),
+        )
+
+        # History observations
+        self.observations.obsHistory.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+            scale=0.1,
+        )
+
+        # Disable randomization for evaluation
+        self.observations.policy.enable_corruption = False
+        self.events.push_robot = None
+        self.events.add_base_mass = None
+
+
+##############################
 # 双足机器人盲视楼梯环境 / Pointfoot Blind Stairs Environment
 ##############################
 

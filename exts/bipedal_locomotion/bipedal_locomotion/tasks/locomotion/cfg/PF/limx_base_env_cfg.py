@@ -227,20 +227,37 @@ class ObservarionsCfg:
             self.concatenate_terms = True  # 连接所有观测项 / Concatenate all observation terms
 
     @configclass
+    @configclass
     class HistoryObsCfg(ObsGroup):
         """历史观测组配置 - 用于存储观测历史 / History observation group - for storing observation history"""
 
         # robot base measurements
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=GaussianNoise(mean=0.0, std=0.05), clip=(-100.0, 100.0),
-                               scale=0.25, )
-        proj_gravity = ObsTerm(func=mdp.projected_gravity, noise=GaussianNoise(mean=0.0, std=0.025),
-                               clip=(-100.0, 100.0), scale=1.0, )
+        base_ang_vel = ObsTerm(
+            func=mdp.base_ang_vel,
+            noise=GaussianNoise(mean=0.0, std=0.05),
+            clip=(-100.0, 100.0),
+            scale=0.1,  # Must match PolicyCfg scale=0.1 for dimension consistency
+        )
+        proj_gravity = ObsTerm(
+            func=mdp.projected_gravity,
+            noise=GaussianNoise(mean=0.0, std=0.025),
+            clip=(-100.0, 100.0),
+            scale=0.5,  # Must match PolicyCfg scale=0.5 for dimension consistency
+        )
 
         # robot joint measurements
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=GaussianNoise(mean=0.0, std=0.01), clip=(-100.0, 100.0),
-                            scale=1.0, )
-        joint_vel = ObsTerm(func=mdp.joint_vel, noise=GaussianNoise(mean=0.0, std=0.01), clip=(-100.0, 100.0),
-                            scale=0.05, )
+        joint_pos = ObsTerm(
+            func=mdp.joint_pos_rel,
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(-100.0, 100.0),
+            scale=1.0,
+        )
+        joint_vel = ObsTerm(
+            func=mdp.joint_vel,
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(-100.0, 100.0),
+            scale=0.02,  # Must match PolicyCfg scale=0.02 for dimension consistency
+        )
 
         # last action
         last_action = ObsTerm(func=mdp.last_action)
