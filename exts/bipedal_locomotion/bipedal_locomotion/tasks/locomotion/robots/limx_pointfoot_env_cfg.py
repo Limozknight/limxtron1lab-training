@@ -462,12 +462,12 @@ class PFPronkEnvCfg(PFBlindFlatEnvCfg):
         
         # 1. 修改命令范围：双足跳通常不需要大范围的水平移动，或者只是直线跳
         # 这里我们限制为主要是X方向的移动，Y方向和旋转设为0
-        self.commands.ranges.base_velocity.ranges = {
-            "lin_vel_x": (0.0, 1.0),   # 允许向前跳 / Allow forward jump
-            "lin_vel_y": (0.0, 0.0),   # 禁止侧向移动 / No lateral movement
-            "ang_vel_z": (0.0, 0.0),   # 禁止旋转 / No rotation
-            "heading": (0.0, 0.0),
-        }
+        self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
+            lin_vel_x=(0.0, 1.0),   # 允许向前跳 / Allow forward jump
+            lin_vel_y=(0.0, 0.0),   # 禁止侧向移动 / No lateral movement
+            ang_vel_z=(0.0, 0.0),   # 禁止旋转 / No rotation
+            heading=(0.0, 0.0),
+        )
         
         # 2. 调整奖励函数 / Adjust rewards
         # 移除/禁用不利于跳跃的平稳行走奖励
@@ -516,9 +516,10 @@ class PFPronkEnvCfg_PLAY(PFPronkEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         # 测试时的配置 / Play configuration
-        self.commands.ranges.base_velocity.ranges = {
-            "lin_vel_x": (0.5, 0.5),   # 固定速度跳
-            "lin_vel_y": (0.0, 0.0),
-            "ang_vel_z": (0.0, 0.0),
-            "heading": (0.0, 0.0),
-        }
+        self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
+            lin_vel_x=(0.5, 0.5),   # 固定速度跳
+            lin_vel_y=(0.0, 0.0),
+            ang_vel_z=(0.0, 0.0),
+            heading=(0.0, 0.0),
+        )
+
