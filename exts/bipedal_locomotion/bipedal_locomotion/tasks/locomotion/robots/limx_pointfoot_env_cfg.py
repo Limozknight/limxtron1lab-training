@@ -214,6 +214,11 @@ class PFTerrainTraversalEnvCfg_PLAY(PFTerrainTraversalEnvCfg):
         # 更小并行数用于评估 / Fewer envs for evaluation
         self.scene.num_envs = 64
 
+        # 限制速度命令范围仅向前 / Restrict velocity to forward only
+        self.commands.base_velocity.ranges.lin_vel_x = (0.5, 1.0)  # 只向前 / Forward only
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.1, 0.1)  # 最小横向 / Minimal lateral
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.2, 0.2)  # 小转向 / Small turning
+
         # 禁用观测腐蚀与随机化 / Disable corruption/random pushes
         self.observations.policy.enable_corruption = False
         self.events.push_robot = None
@@ -455,6 +460,11 @@ class PFStairTraversalEnvCfg_PLAY(PFBaseEnvCfg_PLAY):
             clip=(0.0, 10.0),
             scale=0.1,
         )
+
+        # Restrict velocity to forward only for testing / 限制速度仅向前用于测试
+        self.commands.base_velocity.ranges.lin_vel_x = (0.3, 1.0)  # Forward only / 仅向前
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.1, 0.1)  # Minimal lateral / 最小横向
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.2, 0.2)  # Small turning / 小转向
 
         # Disable randomization for evaluation
         self.observations.policy.enable_corruption = False
