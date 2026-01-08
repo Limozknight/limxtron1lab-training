@@ -447,77 +447,53 @@ class PFStairEnvCfgv1_PLAY(PFBaseEnvCfg_PLAY):
 
 
 #############################
-# Task 2.5: 双足跳（Pronk）环境配置 / Pronk Environment
+# Task 2.5: 太空步（Moonwalk）环境配置 / Moonwalk Environment
 #############################
 
 @configclass
-class PFPronkEnvCfg(PFBlindFlatEnvCfg):
-    """双足跳跃环境配置 / Pronk environment configuration.
+class PFMoonwalkEnvCfg(PFBlindFlatEnvCfg):
+    """太空步（倒退走）环境配置 / Moonwalk (Backward Walking) environment configuration.
     
-    基于平地环境，修改奖励函数以鼓励跳跃。
-    Based on flat terrain environment, modifies rewards to encourage jumping.
+    属于Task 2.5的特技动作之一。
+    Part of Task 2.5 special moves.
     """
     def __post_init__(self):
         super().__post_init__()
         
-        # 1. 修改命令范围：双足跳通常不需要大范围的水平移动，或者只是直线跳
-        # 这里我们限制为主要是X方向的移动，Y方向和旋转设为0
+        # 1. 修改命令范围：仅允许向后移动
         self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(0.0, 1.0),   # 允许向前跳 / Allow forward jump
-            lin_vel_y=(0.0, 0.0),   # 禁止侧向移动 / No lateral movement
-            ang_vel_z=(0.0, 0.0),   # 禁止旋转 / No rotation
+            lin_vel_x=(-1.0, -0.2),   # 仅负向速度（倒退） / Negative velocity only (Backward)
+            lin_vel_y=(0.0, 0.0),     # 禁止侧向移动 / No lateral movement
+            ang_vel_z=(0.0, 0.0),     # 禁止旋转 / No rotation
             heading=(0.0, 0.0),
         )
         
         # 2. 调整奖励函数 / Adjust rewards
-        # 移除/禁用不利于跳跃的平稳行走奖励
-        self.rewards.rew_lin_vel_xy_precise = None
-        self.rewards.rew_ang_vel_z_precise = None
-        self.rewards.no_fly = None     # 必须移除！否则腾空会被惩罚 / Must remove!
-        self.rewards.stand_still = None
-        # self.rewards.feet_air_time = None # 如果有这个的话也要移除
+        # 倒退走本质上还是行走，可以使用大部分标准行走的奖励
+        # 我们主要依赖 velocity tracking reward 来鼓励倒退
         
-        # 添加 Pronk 专属奖励
-        # A. 强制双脚同步 (权重很大)
-        self.rewards.feet_sync = RewTerm(
-            func=mdp.feet_synchronization,
-            weight=2.0,
-            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot_[LR]_Link")}
-        )
-        
-        # B. 鼓励双脚同时腾空 (权重很大)
-        self.rewards.pronk_air_time = RewTerm(
-            func=mdp.pronk_air_time,
-            weight=5.0, # 给予很大的奖励鼓励起飞
-            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot_[LR]_Link")}
-        )
-        
-        # C. 简单的向上速度奖励 (辅助起跳)
-        self.rewards.jump_vel = RewTerm(
-            func=mdp.jump_vertical_velocity,
-            weight=0.5
-        )
-        
-        # D. 保持一定的X方向速度 (如果想让它边跳边走)
-        self.rewards.track_lin_vel_x = RewTerm(
-            func=mdp.track_lin_vel_xy_exp,
-            weight=1.0,
-            params={"command_name": "base_velocity", "std": 0.5}
-        )
-        
-        # E. 姿态稳定性：对于跳跃，允许 Pitch 震荡，但 Roll 应该要小
-        self.rewards.orientation_l2 = RewTerm(
-            func=mdp.flat_orientation_l2,
-            weight=-0.5, # 较小的负权重
-        )
+        # 复原标准行走奖励配置 (从Pronk修改回来)
+        # 确保平滑性惩罚存在，因为倒退走应该是平滑的
+        if self.rewards.pen_action_smoothness is None:
+             self.rewards.pen_action_smoothness = RewTerm(
+                func=mdp.ActionSmoothnessPenalty,
+                weight=-0.04
+            )
+            
+        # 增加姿态稳定性奖励，保证倒走时身体不歪
+        self.rewards.rew_base_stability.weight = 2.0 
+
+        # 稍微增加脚部距离惩罚，避免倒退时拌脚
+        self.rewards.pen_feet_distance.weight = -0.2
+
 
 @configclass
-class PFPronkEnvCfg_PLAY(PFPronkEnvCfg):
+class PFMoonwalkEnvCfg_PLAY(PFMoonwalkEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         # 测试时的配置 / Play configuration
         self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(0.5, 0.5),   # 固定速度跳
+            lin_vel_x=(-0.5, -0.5),   # 固定倒退速度
             lin_vel_y=(0.0, 0.0),
             ang_vel_z=(0.0, 0.0),
             heading=(0.0, 0.0),
