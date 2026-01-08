@@ -737,3 +737,47 @@ def flat_terrain_levels(
     levels = torch.ones(len(env_ids), device=env.device, dtype=torch.int32)
 
     return levels
+
+
+# ============= 2.5 新增：双足跳（Pronk）相关奖励函数 =============
+def feet_synchronization(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """双足同步奖励 - 鼓励两脚状态一致 / Feet synchronization reward - encourage both feet to be in the same state.
+    
+    用于Pronking（双足跳）步态 / Used for Pronking gait.
+    """
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    # 获取接触状态 (Threshold 1.0N)
+    contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 1.0
+    
+    # 逻辑：如果两脚状态不同（异或为真），则惩罚；相同则奖励
+    # Logic: If feet states are different (XOR is true), penalize; if same, reward
+    # Assuming 2 feet. contacts shape: (num_envs, 2)
+    desync = torch.logical_xor(contacts[:, 0], contacts[:, 1])
+    
+    return 1.0 - desync.float()
+
+def jump_vertical_velocity(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """跳跃垂直速度奖励 / Jump vertical velocity reward.
+    
+    鼓励向上运动，忽略向下运动 / Encourage upward motion, ignore downward motion.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    z_vel = asset.data.root_lin_vel_w[:, 2]
+    # 仅奖励正向（向上）速度 / Only reward positive (upward) velocity
+    return torch.clamp(z_vel, min=0.0)
+
+def pronk_air_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Pronk腾空时间奖励 / Pronk air time reward.
+    
+    仅当两脚同时腾空时给予奖励 / Reward only when BOTH feet are in the air.
+    """
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 1.0
+    
+    # 计算接触脚的数量 / Count number of feet in contact
+    num_contacts = torch.sum(contacts.float(), dim=1)
+    
+    # 腾空阶段：接触数量为0 / Flight phase: number of contacts is 0
+    in_air = (num_contacts == 0)
+    
+    return in_air.float()
