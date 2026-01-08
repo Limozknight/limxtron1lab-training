@@ -44,6 +44,29 @@ gym.register(
 )
 
 #############################
+# Task 2.3: PF Disturbance Rejection
+#############################
+gym.register(
+    id="Isaac-Limx-PF-Disturbance-Rejection-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFDisturbanceRejectionEnvCfg,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Limx-PF-Disturbance-Rejection-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFDisturbanceRejectionEnvCfg_PLAY,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+#############################
 # PF Terrain Traversal (Task 2.4)
 #############################
 gym.register(

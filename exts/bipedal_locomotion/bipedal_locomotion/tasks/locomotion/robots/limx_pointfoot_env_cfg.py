@@ -17,6 +17,7 @@ from isaaclab.utils.noise import AdditiveGaussianNoiseCfg as GaussianNoise
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import EventTermCfg as EventTerm # Added import
 
 
 
@@ -132,7 +133,7 @@ class PFTerrainTraversalEnvCfg(PFBaseEnvCfg):
         # 由生成器管理难度，关闭平地课程条目 / Let generator handle difficulty; drop flat curriculum term
         self.curriculum.terrain_levels = None
 
-        # 开启高度射线用于粗糙地形高度估计 / Ray-based height scanner for uneven terrain
+        # 开啟高度射線用於粗糙地形高度估計 / Ray-based height scanner for uneven terrain
         self.scene.height_scanner = RayCasterCfg(
             prim_path="{ENV_REGEX_NS}/Robot/base_Link",
             attach_yaw_only=True,
@@ -142,7 +143,7 @@ class PFTerrainTraversalEnvCfg(PFBaseEnvCfg):
         )
         self.scene.height_scanner.update_period = self.decimation * self.sim.dt
 
-        # 把高度观测送入策略与价值网络 / Feed height scans to policy/critic
+        # 把高度觀測送入策略與價值網絡 / Feed height scans to policy/critic
         self.observations.policy.heights = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -156,7 +157,7 @@ class PFTerrainTraversalEnvCfg(PFBaseEnvCfg):
             clip=(0.0, 10.0),
         )
 
-        # 历史观测加入高度扫描，保证历史维度与策略维度一致
+        # 历史观测加入高度掃描，保證歷史維度與策略維度一致
         self.observations.obsHistory.heights = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -263,7 +264,7 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
             clip=(0.0, 10.0),
         )
 
-        # 历史观测加入高度扫描，保证历史维度与策略维度一致
+        # 历史观测加入高度掃描，保證歷史維度與策略維度一致
         self.observations.obsHistory.heights = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -526,3 +527,71 @@ class PFPronkEnvCfg_PLAY(PFPronkEnvCfg):
             "ang_vel_z": (0.0, 0.0),
             "heading": (0.0, 0.0),
         }
+
+#############################
+# Task 2.3: 抗干扰鲁棒性环境 / Disturbance Rejection Environment
+#############################
+
+@configclass
+class PFDisturbanceRejectionEnvCfg(PFBlindFlatEnvCfg):
+    """Task 2.3: 抗干扰测试环境配置 / Disturbance Rejection Environment Configuration.
+    
+    基于平地环境，但在训练中加入强烈的随机推力（外力扰动），以训练机器人的鲁棒性。
+    Based on flat ground, but applies strong random pushes (external forces) during training for robustness.
+    """
+    def __post_init__(self):
+        super().__post_init__()
+
+        # 1. 增强推力扰动事件 / Enhance push disturbance events
+        # 覆盖基础配置中的轻微扰动，改为高频、大幅度的推力
+        # 评分标准关注 Impulse (Ns)，这里通过大幅度 Force 来模拟冲击
+        self.events.push_robot = EventTerm(
+            func=mdp.apply_external_force_torque_stochastic,
+            mode="interval", 
+            interval_range_s=(2.0, 4.0),  # 每2-4秒推一次 (高频) / Push every 2-4s (Frequent)
+            params={
+                "asset_cfg": SceneEntityCfg("robot", body_names="base_Link"),
+                "force_range": {
+                    "x": (-150.0, 150.0),  # 大幅增加XY方向推力 (基础配置仅50) / Greatly increased XY push
+                    "y": (-150.0, 150.0), 
+                    "z": (-0.0, 0.0)
+                },
+                "torque_range": {
+                    "x": (-25.0, 25.0),    # 增加旋转干扰力矩 / Increased rotational disturbance torque
+                    "y": (-25.0, 25.0), 
+                    "z": (-0.0, 0.0)
+                },
+                "probability": 1.0, # 每次触发间隔必推 / Always push when triggered
+            },
+        )
+
+        # 2. 调整奖励权重以强调稳定性 / Adjust reward weights to emphasize stability
+        # 如果机器人被推倒，给予更大的高度惩罚
+        self.rewards.pen_base_height.weight = -15.0 # default -10.0
+        
+        # 增加姿态稳定性奖励，鼓励受到冲击后快速恢复水平
+        self.rewards.rew_base_stability.weight = 15.0 # default 10.0
+        
+        # 保持速度追踪奖励，因为恢复步态往往意味着恢复速度追踪
+        # 稍微增加线速度追踪权重，鼓励快速纠正位置误差
+        self.rewards.rew_lin_vel_xy_precise.weight = 10.0 # default 8.0
+
+        # 加大对非足部接触的惩罚（摔倒惩罚）
+        self.rewards.pen_undesired_contacts.weight = -2.0 # default -0.5
+
+@configclass
+class PFDisturbanceRejectionEnvCfg_PLAY(PFDisturbanceRejectionEnvCfg):
+    """Task 2.3: 抗干扰测试环境 (Play) / Disturbance Rejection Play Environment"""
+    
+    def __post_init__(self):
+        super().__post_init__()
+        
+        self.scene.num_envs = 32
+        
+        # 为评估目的，保留推力事件以观察抗干扰能力
+        # Task 2.3 考核的是承受最大推力冲量
+        self.events.push_robot.interval_range_s = (4.0, 6.0)
+        self.events.push_robot.params["probability"] = 1.0
+        
+        # 禁用观测噪声 / Disable observation noise
+        self.observations.policy.enable_corruption = False
