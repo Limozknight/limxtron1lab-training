@@ -16,6 +16,8 @@ from bipedal_locomotion.tasks.locomotion import mdp
 from isaaclab.utils.noise import AdditiveGaussianNoiseCfg as GaussianNoise
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import RewardTermCfg as RewTerm
+
 
 
 ######################
@@ -442,3 +444,81 @@ class PFStairEnvCfgv1_PLAY(PFBaseEnvCfg_PLAY):
         self.scene.terrain.terrain_type = "generator"
         self.scene.terrain.max_init_terrain_level = None
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG.replace(difficulty_range=(0.5, 0.5))
+
+
+#############################
+# Task 2.5: 双足跳（Pronk）环境配置 / Pronk Environment
+#############################
+
+@configclass
+class PFPronkEnvCfg(PFBlindFlatEnvCfg):
+    """双足跳跃环境配置 / Pronk environment configuration.
+    
+    基于平地环境，修改奖励函数以鼓励跳跃。
+    Based on flat terrain environment, modifies rewards to encourage jumping.
+    """
+    def __post_init__(self):
+        super().__post_init__()
+        
+        # 1. 修改命令范围：双足跳通常不需要大范围的水平移动，或者只是直线跳
+        # 这里我们限制为主要是X方向的移动，Y方向和旋转设为0
+        self.commands.ranges.base_velocity.ranges = {
+            "lin_vel_x": (0.0, 1.0),   # 允许向前跳 / Allow forward jump
+            "lin_vel_y": (0.0, 0.0),   # 禁止侧向移动 / No lateral movement
+            "ang_vel_z": (0.0, 0.0),   # 禁止旋转 / No rotation
+            "heading": (0.0, 0.0),
+        }
+        
+        # 2. 调整奖励函数 / Adjust rewards
+        # 移除/禁用不利于跳跃的平稳行走奖励
+        self.rewards.rew_lin_vel_xy_precise = None
+        self.rewards.rew_ang_vel_z_precise = None
+        self.rewards.no_fly = None     # 必须移除！否则腾空会被惩罚 / Must remove!
+        self.rewards.stand_still = None
+        # self.rewards.feet_air_time = None # 如果有这个的话也要移除
+        
+        # 添加 Pronk 专属奖励
+        # A. 强制双脚同步 (权重很大)
+        self.rewards.feet_sync = RewTerm(
+            func=mdp.feet_synchronization,
+            weight=2.0,
+            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot_[LR]_Link")}
+        )
+        
+        # B. 鼓励双脚同时腾空 (权重很大)
+        self.rewards.pronk_air_time = RewTerm(
+            func=mdp.pronk_air_time,
+            weight=5.0, # 给予很大的奖励鼓励起飞
+            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot_[LR]_Link")}
+        )
+        
+        # C. 简单的向上速度奖励 (辅助起跳)
+        self.rewards.jump_vel = RewTerm(
+            func=mdp.jump_vertical_velocity,
+            weight=0.5
+        )
+        
+        # D. 保持一定的X方向速度 (如果想让它边跳边走)
+        self.rewards.track_lin_vel_x = RewTerm(
+            func=mdp.track_lin_vel_xy_exp,
+            weight=1.0,
+            params={"command_name": "base_velocity", "std": 0.5}
+        )
+        
+        # E. 姿态稳定性：对于跳跃，允许 Pitch 震荡，但 Roll 应该要小
+        self.rewards.orientation_l2 = RewTerm(
+            func=mdp.flat_orientation_l2,
+            weight=-0.5, # 较小的负权重
+        )
+
+@configclass
+class PFPronkEnvCfg_PLAY(PFPronkEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        # 测试时的配置 / Play configuration
+        self.commands.ranges.base_velocity.ranges = {
+            "lin_vel_x": (0.5, 0.5),   # 固定速度跳
+            "lin_vel_y": (0.0, 0.0),
+            "ang_vel_z": (0.0, 0.0),
+            "heading": (0.0, 0.0),
+        }
