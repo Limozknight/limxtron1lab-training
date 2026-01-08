@@ -595,3 +595,106 @@ class PFDisturbanceRejectionEnvCfg_PLAY(PFDisturbanceRejectionEnvCfg):
         
         # 禁用观测噪声 / Disable observation noise
         self.observations.policy.enable_corruption = False
+
+
+#############################################
+# [方案 A] 仅包含 Task 2 (速度) + Task 3 (抗扰)
+# 场景：平地
+#############################################
+
+@configclass
+class PFTask2And3EnvCfg(PFBlindFlatEnvCfg):
+    """
+    [Task 2 + 3] 平地抗扰与精准行走环境。
+    用于验证机器人是否能在不受地形干扰的情况下，完美完成速度追踪和抗推。
+    """
+    def __post_init__(self):
+        super().__post_init__()
+
+        # --- Task 3: 强力推力 (包含在平地训练中) ---
+        self.events.push_robot = EventTerm(
+            func=mdp.apply_external_force_torque_stochastic,
+            mode="interval", 
+            interval_range_s=(3.0, 5.0), # 3-5秒推一次
+            params={
+                "asset_cfg": SceneEntityCfg("robot", body_names="base_Link"),
+                # 比纯 Task 3 稍微温和一点点，保证能兼顾速度追踪
+                "force_range": {"x": (-120.0, 120.0), "y": (-120.0, 120.0), "z": (0.0, 0.0)},
+                "torque_range": {"x": (-15.0, 15.0), "y": (-15.0, 15.0), "z": (0.0, 0.0)},
+                "probability": 1.0,
+            },
+        )
+
+        # --- Task 2: 高精度速度追踪 ---
+        self.rewards.rew_lin_vel_xy_precise.weight = 10.0 # 提高权重，强制精准
+        self.rewards.rew_ang_vel_z_precise.weight = 5.0
+
+        # --- Task 3: 姿态恢复 ---
+        self.rewards.rew_base_stability.weight = 10.0 # 被推后必须快速回正
+        
+        # 加大摔倒惩罚
+        self.rewards.pen_base_height.weight = -15.0
+
+
+@configclass
+class PFTask2And3EnvCfg_PLAY(PFTask2And3EnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.num_envs = 32
+        self.observations.policy.enable_corruption = False
+        # Play 时保留推力，方便观察
+        self.events.push_robot.interval_range_s = (4.0, 6.0)
+
+
+#############################################
+# [方案 B] 全能王：Task 2 + 3 + 4
+# 场景：复杂地形 (自动生成的课程地形)
+#############################################
+
+@configclass
+class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
+    """
+    [Task 2 + 3 + 4] 全能统一环境。
+    基于优化过的地形配置 (V2)，强制开启推力，并提高追踪精度要求。
+    """
+    def __post_init__(self):
+        super().__post_init__()
+
+        # --- 1. 恢复被 V2 关闭的推力 (Task 3) ---
+        # 在崎岖地形上被推非常危险，所以这里是顶级难度
+        self.events.push_robot = EventTerm(
+            func=mdp.apply_external_force_torque_stochastic,
+            mode="interval", 
+            interval_range_s=(3.0, 6.0),
+            params={
+                "asset_cfg": SceneEntityCfg("robot", body_names="base_Link"),
+                "force_range": {
+                    "x": (-100.0, 100.0), # 地形已经很难了，推力稍微收敛一点(100N)，已经足够满足考核
+                    "y": (-100.0, 100.0), 
+                    "z": (0.0, 0.0)
+                },
+                "torque_range": {"x": (-10.0, 10.0), "y": (-10.0, 10.0), "z": (0.0, 0.0)},
+                "probability": 1.0,
+            },
+        )
+
+        # --- 2. 强化精度 (Task 2) ---
+        # 即使在地形上，也要尽力走准
+        self.rewards.rew_lin_vel_xy_precise.weight = 6.0 # 比单纯平地低一点，因为要允许地形造成的微小误差
+        
+        # --- 3. 强化稳定性 (Task 3) ---
+        # 相比 V2 (2.0) 提高，为了抗推
+        self.rewards.rew_base_stability.weight = 5.0 
+
+        # --- 4. 严厉惩罚 ---
+        self.rewards.pen_base_height.weight = -12.0 # 严禁摔倒
+
+
+@configclass
+class PFUnifiedEnvCfg_PLAY(PFUnifiedEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.num_envs = 32
+        self.observations.policy.enable_corruption = False
+        # Play 时保留推力
+        self.events.push_robot.interval_range_s = (4.0, 6.0)

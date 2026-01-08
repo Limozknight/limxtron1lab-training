@@ -154,7 +154,7 @@ def get_gait_frequency_only(
 
 
 @configclass
-class ObservarionsCfg:
+class ObservationsCfg:
     """观测规范配置类 / Observation specifications configuration class"""
 
     @configclass
@@ -206,7 +206,7 @@ class ObservarionsCfg:
 
         # ============= 2.2 关键修改：速度追踪误差观测 =============
         velocity_tracking_error = ObsTerm(
-            func=mdp.generated_commands,  # 使用现有的速度命令观测函数
+            func=mdp.velocity_tracking_error,  # [Correction] 使用计算误差的函数，而非仅获取命令
             params={"command_name": "base_velocity"},
             noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-5.0, 5.0),
@@ -254,7 +254,7 @@ class ObservarionsCfg:
 
         # ============= 2.2 修改：速度追踪误差历史观测 =============
         velocity_tracking_error = ObsTerm(
-            func=mdp.generated_commands,  # 使用现有的速度命令观测函数
+            func=mdp.velocity_tracking_error,  # [Correction] 使用计算误差的函数
             params={"command_name": "base_velocity"},
             noise=GaussianNoise(mean=0.0, std=0.01),
             clip=(-5.0, 5.0),
@@ -311,12 +311,12 @@ class ObservarionsCfg:
         robot_joint_damping = ObsTerm(func=mdp.robot_joint_damping)  # 关节阻尼 / Joint damping
         robot_pos = ObsTerm(func=mdp.robot_pos)  # 机器人位置 / Robot position
         robot_vel = ObsTerm(func=mdp.robot_vel)  # 机器人速度 / Robot velocity
-        robot_material_propertirs = ObsTerm(func=mdp.robot_material_properties)  # 材质属性 / Material properties
+        robot_material_properties = ObsTerm(func=mdp.robot_material_properties)  # 材质属性 / Material properties
         robot_base_pose = ObsTerm(func=mdp.robot_base_pose)  # 基座姿态 / Base pose
 
         # ============= 2.2 修改：速度追踪误差特权观测 =============
         velocity_tracking_error = ObsTerm(
-            func=mdp.generated_commands,  # 使用现有的速度命令观测函数
+            func=mdp.velocity_tracking_error,  # [Correction] 使用计算误差的函数
             params={"command_name": "base_velocity"}
         )
 
@@ -374,7 +374,7 @@ class EventsCfg:
         min_step_count_between_reset=0,
     )
 
-    radomize_rigid_body_mass_inertia = EventTerm(
+    randomize_rigid_body_mass_inertia = EventTerm(
         func=mdp.randomize_rigid_body_mass_inertia,  # 随机化质量和惯量 / Randomize mass and inertia
         mode="startup",
         params={
@@ -667,7 +667,7 @@ class PFEnvCfg(ManagerBasedRLEnvCfg):
     # 场景设置 / Scene settings
     scene: PFSceneCfg = PFSceneCfg(num_envs=4096, env_spacing=2.5)
     # 基本设置 / Basic settings
-    observations: ObservarionsCfg = ObservarionsCfg()
+    observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
     commands: CommandCfg = CommandCfg()
     # MDP设置 / MDP settings

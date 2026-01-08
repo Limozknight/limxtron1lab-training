@@ -67,6 +67,52 @@ gym.register(
 )
 
 #############################
+# [Config A] Task 2 + 3 (Flat Ground)
+#############################
+gym.register(
+    id="Isaac-Limx-PF-Task2-3-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTask2And3EnvCfg,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Limx-PF-Task2-3-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTask2And3EnvCfg_PLAY,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+#############################
+# [Config B] Task 2 + 3 + 4 (Unified terrain)
+#############################
+gym.register(
+    id="Isaac-Limx-PF-Unified-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFUnifiedEnvCfg,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Limx-PF-Unified-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFUnifiedEnvCfg_PLAY,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+#############################
 # PF Terrain Traversal (Task 2.4)
 #############################
 gym.register(
@@ -108,6 +154,29 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTerrainTraversalEnvCfgV2_PLAY,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+#############################
+# Task 2+3+4: Unified Environment (The one you want explicitly)
+#############################
+gym.register(
+    id="Isaac-Limx-PF-Unified-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFUnifiedEnvCfg,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Limx-PF-Unified-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFUnifiedEnvCfg_PLAY,
         "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
     },
 )
