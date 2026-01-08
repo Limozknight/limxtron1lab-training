@@ -460,9 +460,9 @@ class PFMoonwalkEnvCfg(PFBlindFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         
-        # 1. 修改命令范围：仅允许向后移动
+        # 1. 修改命令范围：仅允许向后移动，增加速度上限以加快倒退
         self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-1.0, -0.2),   # 仅负向速度（倒退） / Negative velocity only (Backward)
+            lin_vel_x=(-2.0, -0.5),   # 仅负向速度（倒退），更高的速度上限 / Negative velocity only (Backward), higher speed limit
             lin_vel_y=(0.0, 0.0),     # 禁止侧向移动 / No lateral movement
             ang_vel_z=(0.0, 0.0),     # 禁止旋转 / No rotation
             heading=(0.0, 0.0),
@@ -479,6 +479,10 @@ class PFMoonwalkEnvCfg(PFBlindFlatEnvCfg):
                 func=mdp.ActionSmoothnessPenalty,
                 weight=-0.04
             )
+        
+        # 增加速度追踪奖励权重，鼓励机器人快速倒退
+        self.rewards.rew_lin_vel_xy_precise.weight = 10.0  # 从 8.0 增加到 10.0
+        self.rewards.rew_lin_vel_xy.weight = 4.0  # 从 3.0 增加到 4.0
             
         # 增加姿态稳定性奖励，保证倒走时身体不歪
         self.rewards.rew_base_stability.weight = 2.0 
@@ -491,9 +495,9 @@ class PFMoonwalkEnvCfg(PFBlindFlatEnvCfg):
 class PFMoonwalkEnvCfg_PLAY(PFMoonwalkEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        # 测试时的配置 / Play configuration
+        # 测试时的配置 / Play configuration - 更快的倒退速度以展示效果
         self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.5, -0.5),   # 固定倒退速度
+            lin_vel_x=(-1.2, -1.2),   # 更快的固定倒退速度 / Faster fixed backward speed
             lin_vel_y=(0.0, 0.0),
             ang_vel_z=(0.0, 0.0),
             heading=(0.0, 0.0),
