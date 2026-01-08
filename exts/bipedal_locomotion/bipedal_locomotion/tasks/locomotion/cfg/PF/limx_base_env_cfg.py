@@ -483,38 +483,42 @@ class RewardsCfg:
     )
 
     # ============= 2.2 关键修改：增加速度追踪奖励权重 =============
+    # [Fix] 权重从 8.0 降至 2.0，防止梯度爆炸 / Reduced from 8.0 to 2.0 to prevent gradient explosion
     rew_lin_vel_xy_precise = RewTerm(
         func=mdp.track_lin_vel_xy_exp,  # 使用现有的线速度追踪函数
-        weight=8.0,  # 增加权重以提高速度追踪精度
+        weight=2.0,
         params={"command_name": "base_velocity", "std": math.sqrt(0.08)}  # 减少std以提高精度
     )
 
+    # [Fix] 权重从 5.0 降至 1.5
     rew_ang_vel_z_precise = RewTerm(
         func=mdp.track_ang_vel_z_exp,  # 使用现有的角速度追踪函数
-        weight=5.0,  # 增加权重以提高角速度追踪精度
+        weight=1.5,
         params={"command_name": "base_velocity", "std": math.sqrt(0.08)}  # 减少std以提高精度
     )
 
     # 原始的速度追踪奖励（保持作为基础）
     rew_lin_vel_xy = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=3.0, params={"command_name": "base_velocity", "std": math.sqrt(0.2)}
+        func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.2)}
     )
     rew_ang_vel_z = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=1.5, params={"command_name": "base_velocity", "std": math.sqrt(0.2)}
+        func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.2)}
     )
 
     # ============= 2.2 关键修改：姿态稳定性奖励 =============
+    # [Fix] 权重从 10.0 降至 1.0 / Reduced from 10.0 to 1.0
     rew_base_stability = RewTerm(
         func=mdp.flat_orientation_l2,  # 使用现有的平坦朝向惩罚函数，但改为正奖励
-        weight=10.0,  # 正权重，奖励姿态稳定性
+        weight=1.0,  # 正权重，奖励姿态稳定性
         params={}
     )
 
     # 调节相关奖励 / Regulation-related rewards
+    # [Fix] 权重从 -10.0 降至 -2.0 / Reduced from -10.0 to -2.0
     pen_base_height = RewTerm(
         func=mdp.base_com_height,  # 基座高度惩罚 / Base height penalty
         params={"target_height": 0.78},  # 目标高度 78cm / Target height 78cm
-        weight=-10.0,  # 减少惩罚权重 / Reduce penalty weight
+        weight=-2.0,  # 减少惩罚权重 / Reduce penalty weight
     )
 
     # 关节相关惩罚 / Joint-related penalties
@@ -523,7 +527,7 @@ class RewardsCfg:
     pen_joint_torque = RewTerm(func=mdp.joint_torques_l2, weight=-0.00008)
     pen_joint_accel = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-07)
     pen_action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.03)
-    pen_joint_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-2.0)
+    pen_joint_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=-1.0)
     pen_joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-1e-03)
     pen_joint_powers = RewTerm(func=mdp.joint_powers_l1, weight=-5e-04)
 
@@ -543,11 +547,12 @@ class RewardsCfg:
     )
     pen_flat_orientation = RewTerm(
         func=mdp.flat_orientation_l2,  # 平坦朝向L2惩罚 / Flat orientation L2 penalty
-        weight=-5.0  # 减少权重 / Reduce weight
+        weight=-2.0  # 减少权重 / Reduce weight
     )
+    # [Fix] 权重从 -50.0 降至 -2.0，这是一个巨大的梯度源 / Reduced from -50 to -2.0, this was a massive gradient source
     pen_feet_distance = RewTerm(
         func=mdp.feet_distance,  # 足部距离惩罚 / Foot distance penalty
-        weight=-50,  # 减少权重 / Reduce weight
+        weight=-2.0,  # 减少权重 / Reduce weight
         params={
             "min_feet_distance": 0.115,  # 最小足部距离 / Minimum foot distance
             "feet_links_name": ["foot_[RL]_Link"]  # 足部连杆名称 / Foot link names

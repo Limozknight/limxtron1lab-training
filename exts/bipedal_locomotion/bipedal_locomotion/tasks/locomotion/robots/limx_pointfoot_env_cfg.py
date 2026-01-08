@@ -618,22 +618,23 @@ class PFTask2And3EnvCfg(PFBlindFlatEnvCfg):
             interval_range_s=(3.0, 5.0), # 3-5秒推一次
             params={
                 "asset_cfg": SceneEntityCfg("robot", body_names="base_Link"),
-                # 比纯 Task 3 稍微温和一点点，保证能兼顾速度追踪
-                "force_range": {"x": (-120.0, 120.0), "y": (-120.0, 120.0), "z": (0.0, 0.0)},
-                "torque_range": {"x": (-15.0, 15.0), "y": (-15.0, 15.0), "z": (0.0, 0.0)},
+                # [Fix] 从 120N 降至 80N，防止物理引擎爆炸 / Reduced from 120N to 80N to prevent physics explosion
+                "force_range": {"x": (-80.0, 80.0), "y": (-80.0, 80.0), "z": (0.0, 0.0)},
+                "torque_range": {"x": (-10.0, 10.0), "y": (-10.0, 10.0), "z": (0.0, 0.0)},
                 "probability": 1.0,
             },
         )
 
         # --- Task 2: 高精度速度追踪 ---
-        self.rewards.rew_lin_vel_xy_precise.weight = 10.0 # 提高权重，强制精准
-        self.rewards.rew_ang_vel_z_precise.weight = 5.0
+        # [Fix] 权重数值正常化 / Normalized weights
+        self.rewards.rew_lin_vel_xy_precise.weight = 3.0 # 原10.0
+        self.rewards.rew_ang_vel_z_precise.weight = 2.0 # 原5.0
 
         # --- Task 3: 姿态恢复 ---
-        self.rewards.rew_base_stability.weight = 10.0 # 被推后必须快速回正
+        self.rewards.rew_base_stability.weight = 2.0 # 原10.0
         
         # 加大摔倒惩罚
-        self.rewards.pen_base_height.weight = -15.0
+        self.rewards.pen_base_height.weight = -5.0 # 原-15.0
 
 
 @configclass
@@ -668,26 +669,27 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
             interval_range_s=(3.0, 6.0),
             params={
                 "asset_cfg": SceneEntityCfg("robot", body_names="base_Link"),
+                # [Fix] 降低推力至 80N / Reduced push to 80N
                 "force_range": {
-                    "x": (-100.0, 100.0), # 地形已经很难了，推力稍微收敛一点(100N)，已经足够满足考核
-                    "y": (-100.0, 100.0), 
+                    "x": (-80.0, 80.0), 
+                    "y": (-80.0, 80.0), 
                     "z": (0.0, 0.0)
                 },
-                "torque_range": {"x": (-10.0, 10.0), "y": (-10.0, 10.0), "z": (0.0, 0.0)},
+                "torque_range": {"x": (-8.0, 8.0), "y": (-8.0, 8.0), "z": (0.0, 0.0)},
                 "probability": 1.0,
             },
         )
 
         # --- 2. 强化精度 (Task 2) ---
         # 即使在地形上，也要尽力走准
-        self.rewards.rew_lin_vel_xy_precise.weight = 6.0 # 比单纯平地低一点，因为要允许地形造成的微小误差
+        self.rewards.rew_lin_vel_xy_precise.weight = 3.0 # 原 6.0/8.0
         
         # --- 3. 强化稳定性 (Task 3) ---
         # 相比 V2 (2.0) 提高，为了抗推
-        self.rewards.rew_base_stability.weight = 5.0 
+        self.rewards.rew_base_stability.weight = 1.5 # 原 5.0
 
         # --- 4. 严厉惩罚 ---
-        self.rewards.pen_base_height.weight = -12.0 # 严禁摔倒
+        self.rewards.pen_base_height.weight = -4.0 # 原 -12.0
 
 
 @configclass

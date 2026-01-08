@@ -380,7 +380,12 @@ def base_orientation_stability_reward(
     # 转换为Roll, Pitch, Yaw / Convert to Roll, Pitch, Yaw
     roll = torch.atan2(2.0 * (quat[:, 3] * quat[:, 0] + quat[:, 1] * quat[:, 2]),
                        1.0 - 2.0 * (quat[:, 0] ** 2 + quat[:, 1] ** 2))
-    pitch = torch.asin(2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0]))
+    
+    # [Fix] 增加 clamp 防止 asin 接收超出 [-1, 1] 的数值导致 NaN
+    # [Fix] Added clamp to prevent asin from receiving values outside [-1, 1] causing NaN
+    sin_p = 2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0])
+    sin_p = torch.clamp(sin_p, -1.0, 1.0)
+    pitch = torch.asin(sin_p)
 
     # 计算姿态稳定性分数 / Compute orientation stability score
     roll_stability = torch.exp(-torch.abs(roll) / max_roll)
@@ -428,7 +433,12 @@ def base_orientation_stability(
     quat = asset.data.root_quat_w
     roll = torch.atan2(2.0 * (quat[:, 3] * quat[:, 0] + quat[:, 1] * quat[:, 2]),
                        1.0 - 2.0 * (quat[:, 0] ** 2 + quat[:, 1] ** 2))
-    pitch = torch.asin(2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0]))
+    
+    # [Fix] 增加 clamp 防止 asin NaN
+    # [Fix] Added clamp to prevent asin NaN
+    sin_p = 2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0])
+    sin_p = torch.clamp(sin_p, -1.0, 1.0)
+    pitch = torch.asin(sin_p)
 
     # 在实际实现中，这里需要历史数据来计算震荡幅度 / In actual implementation, historical data is needed to compute oscillation amplitude
     # 这里简化实现，返回当前姿态角的绝对值 / Simplified implementation, return absolute value of current orientation angles
