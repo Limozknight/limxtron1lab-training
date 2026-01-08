@@ -90,6 +90,29 @@ gym.register(
 )
 
 #############################
+# PF Stair Traversal (Task 2.4 - Stairs)
+#############################
+gym.register(
+    id="Isaac-Limx-PF-Stair-Traversal-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFStairTraversalEnvCfg,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Limx-PF-Stair-Traversal-Play-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFStairTraversalEnvCfg_PLAY,
+        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+    },
+)
+
+#############################
 # WF Blind Flat Environment
 #############################
 gym.register(
