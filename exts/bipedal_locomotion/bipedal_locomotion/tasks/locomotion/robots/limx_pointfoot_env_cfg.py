@@ -670,13 +670,16 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
         # --- 0. [Task 4] 激活楼梯地形 ---
         # 混合地形：波浪、粗糙、楼梯 (Waves, Rough, Stairs)
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG 
-        # 激活地形课程学习
-        self.curriculum.terrain_levels.func = mdp.terrain_levels_vel
-        self.curriculum.terrain_levels.params = {
-            "asset_cfg": SceneEntityCfg("robot"),
-            "step_size": -1.0,  # 只要不倒地就升级
-            "tracking_vel_threshold": 0.5, # 速度跟踪要求降低，优先通过
-        }
+        
+        # 重新初始化 terrain_levels 以避免 AttributeError
+        self.curriculum.terrain_levels = CurrTerm(
+            func=mdp.terrain_levels_vel,
+            params={
+                "asset_cfg": SceneEntityCfg("robot"),
+                "step_size": -1.0,  # 只要不倒地就升级
+                "tracking_vel_threshold": 0.5, # 速度跟踪要求降低，优先通过
+            }
+        )
 
         # --- 1. 恢复被 V2 关闭的推力 (Task 3) ---
         # 在崎岖地形上被推非常危险，所以这里是顶级难度
