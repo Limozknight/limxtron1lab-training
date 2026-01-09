@@ -17,8 +17,8 @@ from isaaclab.utils.noise import AdditiveGaussianNoiseCfg as GaussianNoise
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import RewardTermCfg as RewTerm
-from isaaclab.managers import EventTermCfg as EventTerm
-from isaaclab.managers import CurriculumTermCfg as CurrTerm  # [Fix] Added missing import
+from isaaclab.managers import EventTermCfg as EventTerm # Added import
+
 
 
 ######################
@@ -31,10 +31,6 @@ class PFBaseEnvCfg(PFEnvCfg):
     """双足机器人基础环境配置 - 所有变体的共同基础 / Base environment configuration for pointfoot robot - common foundation for all variants"""
     def __post_init__(self):
         super().__post_init__()
-
-        # [Task 4 Optimization] 提高摆动高度范围，适应20cm楼梯
-        # Increase swing height range to handle 20cm stairs
-        self.commands.gait_command.ranges.swing_height = (0.15, 0.25)
 
         self.scene.robot = POINTFOOT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.robot.init_state.joint_pos = {
@@ -662,24 +658,10 @@ class PFTask2And3EnvCfg_PLAY(PFTask2And3EnvCfg):
 class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
     """
     [Task 2 + 3 + 4] 全能统一环境。
-    包含：平地精准行走 + 强力抗推 + 复杂地形 (现在的版本加入了楼梯)。
+    基于优化过的地形配置 (V2)，强制开启推力，并提高追踪精度要求。
     """
     def __post_init__(self):
         super().__post_init__()
-
-        # --- 0. [Task 4] 激活楼梯地形 ---
-        # 混合地形：波浪、粗糙、楼梯 (Waves, Rough, Stairs)
-        self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG 
-        
-        # 重新初始化 terrain_levels 以避免 AttributeError
-        self.curriculum.terrain_levels = CurrTerm(
-            func=mdp.terrain_levels_vel,
-            params={
-                "asset_cfg": SceneEntityCfg("robot"),
-                "step_size": -1.0,  # 只要不倒地就升级
-                "tracking_vel_threshold": 0.5, # 速度跟踪要求降低，优先通过
-            }
-        )
 
         # --- 1. 恢复被 V2 关闭的推力 (Task 3) ---
         # 在崎岖地形上被推非常危险，所以这里是顶级难度
@@ -704,18 +686,13 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
         # 即使在地形上，也要尽力走准
         self.rewards.rew_lin_vel_xy_precise.weight = 3.0 # 原 6.0/8.0
         
-        # --- 3. 强化稳定性 (Task 3 & 4) ---
-        # 爬楼梯需要极高的身体稳定性，否则会踩空
-        self.rewards.rew_base_stability.weight = 2.5 # [Upgrade] 1.0 -> 2.5 为了楼梯拼了
+        # --- 3. 强化稳定性 (Task 3) ---
+        # 相比 V2 (2.0) 提高，为了抗推
+        self.rewards.rew_base_stability.weight = 1.0 # [Fix] 不要太高，给移动容错空间
 
         # --- 4. 严厉惩罚 ---
         # [Fix] 之前是 -4.0，还是太高了，会导致机器人因为达不到完美高度而即使倒地也没区别
         self.rewards.pen_base_height.weight = -1.0
-        
-        # --- 5. [Task 4] 关键修改：强制抬腿 (Feet Regulation) ---
-        # 你的曲线显示这一项下降很厉害，这在楼梯上是致命的。
-        # 我们必须让它意识到乱踩是要命的。
-        self.rewards.pen_feet_regulation.weight = -1.0 # 之前是 -0.2，增强5倍惩罚，强制规范步伐
 
 
 @configclass
