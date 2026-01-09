@@ -286,7 +286,7 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
 
         # 高度惩罚（保持）/ Height penalty (maintained)
         self.rewards.pen_base_height.func = mdp.base_height_rough_l2
-        self.rewards.pen_base_height.weight = -8.0
+        self.rewards.pen_base_height.weight = -1.0         # [Fix] -8.0 -> -1.0
         self.rewards.pen_base_height.params = {
             "target_height": 0.78,
             "sensor_cfg": SceneEntityCfg("height_scanner"),
@@ -300,11 +300,13 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         self.rewards.pen_undesired_contacts.weight = -1.0
 
         # **V2 关键修改：扭矩与动作平滑** / Key V2 changes: torque and smoothness
-        self.rewards.pen_joint_torque.weight = -0.025      # V1: -0.01（增加 2.5 倍）
-        self.rewards.pen_action_smoothness.weight = -0.12  # V1: -0.08（增加 50%）
+        # [Fix] 这里的扭矩惩罚原来是 -0.025，这太大了！会导致机器人为了不产生扭矩直接倒地。
+        # 恢复到正常数量级 (-0.00008 左右或微增)
+        self.rewards.pen_joint_torque.weight = -0.0001     # V1: -0.01 -> Fixed to -1e-4 range
+        self.rewards.pen_action_smoothness.weight = -0.05  # V1: -0.08 -> Reduced slightly
         
         # **V2 关键修改：俯仰/滚转角速度** / Key V2 change: pitch/roll angular velocity
-        self.rewards.pen_ang_vel_xy.weight = -0.10         # V1: -0.05（翻倍）
+        self.rewards.pen_ang_vel_xy.weight = -0.05         # V1: -0.05
 
         # 禁用外力扰动 / Disable random pushes
         self.events.push_robot = None
@@ -686,10 +688,11 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
         
         # --- 3. 强化稳定性 (Task 3) ---
         # 相比 V2 (2.0) 提高，为了抗推
-        self.rewards.rew_base_stability.weight = 1.5 # 原 5.0
+        self.rewards.rew_base_stability.weight = 1.0 # [Fix] 不要太高，给移动容错空间
 
         # --- 4. 严厉惩罚 ---
-        self.rewards.pen_base_height.weight = -4.0 # 原 -12.0
+        # [Fix] 之前是 -4.0，还是太高了，会导致机器人因为达不到完美高度而即使倒地也没区别
+        self.rewards.pen_base_height.weight = -1.0
 
 
 @configclass
