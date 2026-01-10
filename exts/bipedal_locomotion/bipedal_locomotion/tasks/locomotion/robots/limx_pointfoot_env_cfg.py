@@ -493,11 +493,12 @@ class PFMoonwalkEnvCfg(PFBlindFlatEnvCfg):
             self.rewards.rew_lin_vel_xy = None
             
         # 增加姿态稳定性奖励，保证倒走时身体不歪 / Add orientation stability reward
-        self.rewards.orientation_stability = RewTerm(
-            func=mdp.base_orientation_stability_reward,
-            weight=1.0,
-            params={"max_roll": 0.3, "max_pitch": 0.3, "decay_factor": 0.8}
-        )
+        # TODO: 临时注释，调试性能问题 / Temporarily commented to debug performance
+        # self.rewards.orientation_stability = RewTerm(
+        #     func=mdp.base_orientation_stability_reward,
+        #     weight=1.0,
+        #     params={"max_roll": 0.3, "max_pitch": 0.3, "decay_factor": 0.8}
+        # )
 
         # 增加基座稳定性奖励权重 / Increase base stability reward weight
         self.rewards.rew_base_stability.weight = 2.0
