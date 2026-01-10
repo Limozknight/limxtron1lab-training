@@ -655,12 +655,14 @@ class PFTask2And3EnvCfg(PFBlindFlatEnvCfg):
 
 @configclass
 class PFTask2And3EnvCfg_PLAY(PFTask2And3EnvCfg):
+    """Play version of Task 2+3 - same config as training, just disable observation corruption."""
     def __post_init__(self):
         super().__post_init__()
         self.scene.num_envs = 32
+        # 禁用观测噪声，其他配置保持与训练一致
         self.observations.policy.enable_corruption = False
-        # Play 时保留推力，方便观察
-        self.events.push_robot.interval_range_s = (4.0, 6.0)
+        # [重要] 推力间隔保持与训练一致，不修改
+        # Push interval stays the same as training (3.0-5.0s)
 
 
 #############################################
