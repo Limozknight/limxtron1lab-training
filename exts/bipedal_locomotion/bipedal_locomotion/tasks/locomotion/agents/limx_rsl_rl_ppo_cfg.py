@@ -120,6 +120,48 @@ class SF_TRON1AFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         orthogonal_init = False,
     )
 
+
+#-----------------------------------------------------------------
+# Task 2.5 Moonwalk - Special Move Training Config
+#-----------------------------------------------------------------
+@configclass
+class PF_MoonwalkPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+    """Moonwalk (Backward Walking) specialized PPO runner configuration."""
+    num_steps_per_env = 24
+    max_iterations = 5000         # 比标准任务多一些迭代，因为学习更复杂的运动 / More iterations for complex motion
+    save_interval = 200           # 更频繁的保存 / Frequent saving
+    experiment_name = "pf_moonwalk"  # 独立的实验名称 / Unique experiment name
+    empirical_normalization = False
+    policy = RslRlPpoActorCriticCfg(
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+    # 使用MLP版本支持历史观测
+    algorithm = RslRlPpoAlgorithmMlpCfg(
+        class_name="PPO",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        learning_rate=1.0e-3,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        obs_history_len=10,
+    )
+    encoder = EncoderCfg(
+        output_detach=True,
+        num_output_dim=3,
+        hidden_dims=[256, 128],
+        activation="elu",
+        orthogonal_init=False,
+    )
 #-----------------------------------------------------------------
 @configclass
 class WF_TRON1AFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):

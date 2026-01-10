@@ -473,21 +473,36 @@ class PFMoonwalkEnvCfg(PFBlindFlatEnvCfg):
         # 我们主要依赖 velocity tracking reward 来鼓励倒退
         
         # 复原标准行走奖励配置 (从Pronk修改回来)
-        # 确保平滑性惩罚存在，因为倒退走应该是平滑的
+        # 确保平滑性惩罚存在，因为倒退走应该是平滑的，但降低权重以避免过度约束
         if self.rewards.pen_action_smoothness is None:
              self.rewards.pen_action_smoothness = RewTerm(
                 func=mdp.ActionSmoothnessPenalty,
-                weight=-0.04
+                weight=-0.05  # 从 -0.04 调整为 -0.05，与task234标准一致
             )
+        else:
+             self.rewards.pen_action_smoothness.weight = -0.05
         
-        # 增加速度追踪奖励权重，鼓励机器人快速倒退
-        self.rewards.rew_lin_vel_xy_precise.weight = 10.0  # 从 8.0 增加到 10.0
-        self.rewards.rew_lin_vel_xy.weight = 4.0  # 从 3.0 增加到 4.0
+        # 增加存活奖励，防止机器人过早选择自杀策略 / Increase survival reward
+        self.rewards.keep_balance.weight = 2.0  # 从默认 1.0 增加到 2.0
+        
+        # 调整速度追踪奖励权重，鼓励机器人快速倒退但不过度 / Adjust velocity tracking rewards
+        self.rewards.rew_lin_vel_xy_precise.weight = 6.0  # 从 10.0 降低到 6.0（防止过度优化速度）
+        
+        # 移除重复的速度追踪奖励，避免冲突 / Remove duplicate velocity tracking reward
+        if hasattr(self.rewards, 'rew_lin_vel_xy') and self.rewards.rew_lin_vel_xy is not None:
+            self.rewards.rew_lin_vel_xy = None
             
-        # 增加姿态稳定性奖励，保证倒走时身体不歪
-        self.rewards.rew_base_stability.weight = 2.0 
+        # 增加姿态稳定性奖励，保证倒走时身体不歪 / Add orientation stability reward
+        self.rewards.orientation_stability = RewTerm(
+            func=mdp.base_orientation_stability_reward,
+            weight=1.0,
+            params={"max_roll": 0.3, "max_pitch": 0.3, "decay_factor": 0.8}
+        )
 
-        # 稍微增加脚部距离惩罚，避免倒退时拌脚
+        # 增加基座稳定性奖励权重 / Increase base stability reward weight
+        self.rewards.rew_base_stability.weight = 2.0
+
+        # 稍微增加脚部距离惩罚，避免倒退时拌脚 / Adjust foot distance penalty
         self.rewards.pen_feet_distance.weight = -0.2
 
 
