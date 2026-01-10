@@ -9,6 +9,8 @@ from bipedal_locomotion.tasks.locomotion.cfg.PF.terrains_cfg import (
     BLIND_ROUGH_TERRAINS_PLAY_CFG,
     STAIRS_TERRAINS_CFG,
     STAIRS_TERRAINS_PLAY_CFG,
+    MIXED_TERRAINS_CFG,
+    MIXED_TERRAINS_PLAY_CFG,
 )
 
 from isaaclab.sensors import RayCasterCfg, patterns
@@ -237,7 +239,8 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         self.scene.env_spacing = 3.0
         self.scene.num_envs = 2048
         self.scene.terrain.terrain_type = "generator"
-        self.scene.terrain.terrain_generator = BLIND_ROUGH_TERRAINS_CFG
+        # 使用混合地形包含楼梯 (Task 2.4 Requirement)
+        self.scene.terrain.terrain_generator = MIXED_TERRAINS_CFG
         self.curriculum.terrain_levels = None
 
         # 高度扫描传感器 / Height scanner
@@ -684,15 +687,20 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
 
         # --- 2. 强化精度 (Task 2) ---
         # 即使在地形上，也要尽力走准
-        self.rewards.rew_lin_vel_xy_precise.weight = 3.0 # 原 6.0/8.0
+        self.rewards.rew_lin_vel_xy_precise.weight = 5.0 # [Tuned] Increased from 3.0 for better tracking
         
         # --- 3. 强化稳定性 (Task 3) ---
         # 相比 V2 (2.0) 提高，为了抗推
-        self.rewards.rew_base_stability.weight = 1.0 # [Fix] 不要太高，给移动容错空间
+        self.rewards.rew_base_stability.weight = 2.0 # [Tuned] Increased from 1.0
 
         # --- 4. 严厉惩罚 ---
         # [Fix] 之前是 -4.0，还是太高了，会导致机器人因为达不到完美高度而即使倒地也没区别
         self.rewards.pen_base_height.weight = -1.0
+
+        # --- 5. Additional Tuning from Results Analysis ---
+        self.rewards.foot_landing_vel.weight = -2.0    # Penalize hard landings more
+        self.rewards.pen_ang_vel_xy.weight = -0.1      # Penalize wobble (roll/pitch) more
+        self.rewards.pen_action_smoothness.weight = -0.1 # Encourage smoother control
 
 
 @configclass

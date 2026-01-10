@@ -216,3 +216,36 @@ STAIRS_TERRAINS_PLAY_CFG = TerrainGeneratorCfg(
     curriculum=True,
     difficulty_range=(1.0, 1.0),
 )
+
+##############################
+# 混合地形配置 (Task 2.4 - Added) / Mixed Terrain Configuration
+##############################
+
+MIXED_TERRAINS_CFG = TerrainGeneratorCfg(
+    seed=42,
+    size=(16.0, 16.0),
+    border_width=20.0,
+    num_rows=10,
+    num_cols=16,
+    horizontal_scale=0.1,
+    vertical_scale=0.005,
+    slope_threshold=0.75,
+    use_cache=True,
+    sub_terrains={
+        "flat": MeshPlaneTerrainCfg(proportion=0.10),
+        "waves": HfWaveTerrainCfg(proportion=0.15, amplitude_range=(0.01, 0.06), num_waves=10, border_width=0.25),
+        "random_rough": HfRandomUniformTerrainCfg(proportion=0.15, noise_range=(0.01, 0.06), noise_step=0.01, border_width=0.25),
+        "pyramid_stairs": MeshPyramidStairsTerrainCfg(proportion=0.2, step_height_range=(0.05, 0.15), step_width=0.3, platform_width=3.0, border_width=1.0, holes=False),
+        "pyramid_stairs_inv": MeshInvertedPyramidStairsTerrainCfg(proportion=0.2, step_height_range=(0.05, 0.15), step_width=0.3, platform_width=3.0, border_width=1.0, holes=False),
+        "hf_pyramid_slope": HfPyramidSlopedTerrainCfg(proportion=0.10, slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25),
+        "hf_pyramid_slope_inv": HfInvertedPyramidSlopedTerrainCfg(proportion=0.10, slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25),
+    },
+    curriculum=True,
+    difficulty_range=(0.0, 1.0),
+)
+
+MIXED_TERRAINS_PLAY_CFG = MIXED_TERRAINS_CFG.copy()
+MIXED_TERRAINS_PLAY_CFG.curriculum = False
+MIXED_TERRAINS_PLAY_CFG.difficulty_range = (1.0, 1.0)
+MIXED_TERRAINS_PLAY_CFG.num_rows = 4
+MIXED_TERRAINS_PLAY_CFG.num_cols = 4
