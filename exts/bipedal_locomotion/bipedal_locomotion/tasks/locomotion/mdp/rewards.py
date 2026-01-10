@@ -626,8 +626,11 @@ class ActionSmoothnessPenalty(ManagerTermBase):
             self.prev_action = current_action
             return torch.zeros(current_action.shape[0], device=current_action.device)
 
-        # Compute the smoothness penalty
-        penalty = torch.sum(torch.square(current_action - 2 * self.prev_action + self.prev_prev_action), dim=1)
+        # Compute the smoothness penalty (first-order difference, not second-order)
+        # 改为一阶导数而不是二阶，避免极端值 / Changed to first-order to avoid extreme values
+        penalty = torch.sum(torch.square(current_action - self.prev_action), dim=1)
+        # 添加缩放因子防止爆炸 / Add scaling factor to prevent explosion
+        penalty = penalty * 0.1
 
         # Update the previous actions for the next call
         self.prev_prev_action = self.prev_action
