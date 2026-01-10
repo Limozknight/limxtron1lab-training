@@ -726,5 +726,10 @@ class PFUnifiedEnvCfg_PLAY(PFUnifiedEnvCfg):
         super().__post_init__()
         self.scene.num_envs = 32
         self.observations.policy.enable_corruption = False
-        # Play 时保留推力
-        self.events.push_robot.interval_range_s = (4.0, 6.0)
+        
+        # Play 时禁用推力，方便观察 / Disable push in Play mode for better observation
+        self.events.push_robot = None
+        
+        # 使用混合地形的测试配置 (固定难度) / Use mixed terrain play config (fixed difficulty)
+        # 这会让大家分散在不同的地形上 (楼梯、波浪等)
+        self.scene.terrain.terrain_generator = MIXED_TERRAINS_PLAY_CFG
