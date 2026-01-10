@@ -1,6 +1,9 @@
 import gymnasium as gym
 
-from bipedal_locomotion.tasks.locomotion.agents.limx_rsl_rl_ppo_cfg import PF_TRON1AFlatPPORunnerCfg, WF_TRON1AFlatPPORunnerCfg, SF_TRON1AFlatPPORunnerCfg
+from bipedal_locomotion.tasks.locomotion.agents.limx_rsl_rl_ppo_cfg import (
+    PF_TRON1AFlatPPORunnerCfg, WF_TRON1AFlatPPORunnerCfg, SF_TRON1AFlatPPORunnerCfg,
+    PF_Task2And3PPORunnerCfg, PF_Task2And3And4PPORunnerCfg
+)
 
 from . import limx_pointfoot_env_cfg, limx_wheelfoot_env_cfg, limx_solefoot_env_cfg
 
@@ -13,6 +16,11 @@ limx_pf_blind_flat_runner_cfg = PF_TRON1AFlatPPORunnerCfg()
 limx_wf_blind_flat_runner_cfg = WF_TRON1AFlatPPORunnerCfg()
 
 limx_sf_blind_flat_runner_cfg = SF_TRON1AFlatPPORunnerCfg()
+
+# Task-specific runner configurations with task-specific experiment names
+limx_pf_task2_3_runner_cfg = PF_Task2And3PPORunnerCfg()
+
+limx_pf_task2_3_4_runner_cfg = PF_Task2And3And4PPORunnerCfg()
 
 
 
@@ -75,7 +83,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTask2And3EnvCfg,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+        "rsl_rl_cfg_entry_point": limx_pf_task2_3_runner_cfg,
     },
 )
 
@@ -85,7 +93,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTask2And3EnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+        "rsl_rl_cfg_entry_point": limx_pf_task2_3_runner_cfg,
     },
 )
 
@@ -98,7 +106,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": limx_pointfoot_env_cfg.PFUnifiedEnvCfg,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+        "rsl_rl_cfg_entry_point": limx_pf_task2_3_4_runner_cfg,
     },
 )
 
@@ -108,7 +116,7 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": limx_pointfoot_env_cfg.PFUnifiedEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
+        "rsl_rl_cfg_entry_point": limx_pf_task2_3_4_runner_cfg,
     },
 )
 

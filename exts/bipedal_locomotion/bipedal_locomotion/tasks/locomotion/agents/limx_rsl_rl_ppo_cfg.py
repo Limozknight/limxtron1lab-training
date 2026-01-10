@@ -82,6 +82,88 @@ class PF_TRON1AFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         orthogonal_init=False,    # 不使用正交初始化 / Don't use orthogonal initialization
     )
 
+
+# Task 2+3 专用配置 - 平地上的速度追踪 + 抗干扰训练
+# Task 2+3 specialized configuration - velocity tracking + disturbance rejection on flat ground
+@configclass
+class PF_Task2And3PPORunnerCfg(RslRlOnPolicyRunnerCfg):
+    """Task 2+3 (Flat terrain with disturbance) training configuration."""
+    num_steps_per_env = 24
+    max_iterations = 3000
+    save_interval = 200
+    experiment_name = "pf_task2_3_flat"  # 清晰的任务标识
+    empirical_normalization = False
+    policy = RslRlPpoActorCriticCfg(
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+    algorithm = RslRlPpoAlgorithmMlpCfg(
+        class_name="PPO",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        learning_rate=1.0e-3,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        obs_history_len=10,
+    )
+    encoder = EncoderCfg(
+        output_detach=True,
+        num_output_dim=3,
+        hidden_dims=[256, 128],
+        activation="elu",
+        orthogonal_init=False,
+    )
+
+
+# Task 2+3+4 专用配置 - 混合地形上的全能训练
+# Task 2+3+4 specialized configuration - unified training on mixed terrain
+@configclass
+class PF_Task2And3And4PPORunnerCfg(RslRlOnPolicyRunnerCfg):
+    """Task 2+3+4 (Mixed terrain with stairs) training configuration."""
+    num_steps_per_env = 24
+    max_iterations = 3000
+    save_interval = 200
+    experiment_name = "pf_task2_3_4_unified"  # 清晰的任务标识
+    empirical_normalization = False
+    policy = RslRlPpoActorCriticCfg(
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+    algorithm = RslRlPpoAlgorithmMlpCfg(
+        class_name="PPO",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        learning_rate=1.0e-3,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        obs_history_len=10,
+    )
+    encoder = EncoderCfg(
+        output_detach=True,
+        num_output_dim=3,
+        hidden_dims=[256, 128],
+        activation="elu",
+        orthogonal_init=False,
+    )
+
 #-----------------------------------------------------------------
 @configclass
 class SF_TRON1AFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):

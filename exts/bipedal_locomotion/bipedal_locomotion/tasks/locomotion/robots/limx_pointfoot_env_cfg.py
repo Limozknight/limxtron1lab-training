@@ -719,6 +719,13 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
         self.rewards.pen_ang_vel_xy.weight = -0.1      # Penalize wobble (roll/pitch) more
         self.rewards.pen_action_smoothness.weight = -0.1 # Encourage smoother control
 
+        # --- 6. Fix PhysX Buffer Overflow (Patch buffer overflow) ---
+        # 4096 envs + Stairs terrain requires significantly larger buffers
+        self.sim.physx.gpu_max_rigid_patch_count = 10 * 1024 * 1024
+        self.sim.physx.gpu_found_lost_pairs_capacity = 10 * 1024 * 1024
+        self.sim.physx.gpu_found_lost_aggregate_pairs_capacity = 10 * 1024 * 1024
+        self.sim.physx.gpu_total_aggregate_pairs_capacity = 10 * 1024 * 1024
+
 
 @configclass
 class PFUnifiedEnvCfg_PLAY(PFUnifiedEnvCfg):
