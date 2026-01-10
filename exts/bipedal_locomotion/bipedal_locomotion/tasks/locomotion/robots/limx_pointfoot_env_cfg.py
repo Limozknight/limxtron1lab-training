@@ -20,6 +20,7 @@ from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import EventTermCfg as EventTerm # Added import
+from isaaclab.managers import CurriculumTermCfg as CurrTerm
 
 
 
@@ -239,6 +240,7 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         self.scene.env_spacing = 3.0
         self.scene.num_envs = 2048
         self.scene.terrain.terrain_type = "generator"
+        self.scene.terrain.terrain_generator = MIXED_TERRAINS_CFG
         # 是否启用课程学习 (Task 2.4 Requirement)
         self.curriculum.terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
         
