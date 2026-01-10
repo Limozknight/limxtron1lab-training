@@ -239,9 +239,9 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         self.scene.env_spacing = 3.0
         self.scene.num_envs = 2048
         self.scene.terrain.terrain_type = "generator"
-        # 使用混合地形包含楼梯 (Task 2.4 Requirement)
-        self.scene.terrain.terrain_generator = MIXED_TERRAINS_CFG
-        self.curriculum.terrain_levels = None
+        # 是否启用课程学习 (Task 2.4 Requirement)
+        self.curriculum.terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
+        
 
         # 高度扫描传感器 / Height scanner
         self.scene.height_scanner = RayCasterCfg(
@@ -277,7 +277,7 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         )
 
         # ========== V2 修改 1: 降低动作尺度 ==========
-        self.actions.joint_pos.scale = 0.20  # V1: 0.25
+        self.actions.joint_pos.scale = 0.25  # Reverted to default 0.25 for better stairs climbing
 
         # ========== V2 修改 2-6: 奖励权重调整 ==========
         # 速度跟踪（略降，给扭矩/姿态优化让路）/ Velocity tracking (slightly reduced)
@@ -286,6 +286,15 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
 
         # 姿态稳定（大幅增加）/ Base stability (significantly increased)
         self.rewards.rew_base_stability.weight = 2.0       # V1: 1.0
+
+        # ========== 修复学习缓慢问题 / Fix Slow Learning Issue ==========
+        # 1. 明确存活奖励，防止过早自杀 / Explicit survival reward to prevent early suicide
+        self.rewards.keep_balance.weight = 2.0  # Increased from default 1.0
+
+        # 2. 降低初期惩罚，避免吓死Agent / Reduce initial penalties
+        self.rewards.pen_action_smoothness.weight = -0.05  # Reduced from -0.1
+        self.rewards.foot_landing_vel.weight = -1.0        # Reduced from -2.0 temporarily
+        self.rewards.pen_ang_vel_xy.weight = -0.05         # Reduced from -0.1
 
         # 高度惩罚（保持）/ Height penalty (maintained)
         self.rewards.pen_base_height.func = mdp.base_height_rough_l2
@@ -692,6 +701,12 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
         # --- 3. 强化稳定性 (Task 3) ---
         # 相比 V2 (2.0) 提高，为了抗推
         self.rewards.rew_base_stability.weight = 2.0 # [Tuned] Increased from 1.0
+        
+        # --- 修复 Slow Learning: 降低惩罚，提高生存 ---
+        self.rewards.keep_balance.weight = 1.0 # [Tuned] Reduced from 2.5 to avoid lazy standing
+        self.rewards.foot_landing_vel.weight = -1.0
+        self.rewards.pen_ang_vel_xy.weight = -0.05
+        self.rewards.pen_action_smoothness.weight = -0.05
 
         # --- 4. 严厉惩罚 ---
         # [Fix] 之前是 -4.0，还是太高了，会导致机器人因为达不到完美高度而即使倒地也没区别

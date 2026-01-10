@@ -487,14 +487,14 @@ class RewardsCfg:
     rew_lin_vel_xy_precise = RewTerm(
         func=mdp.track_lin_vel_xy_exp,  # 使用现有的线速度追踪函数
         weight=2.0,
-        params={"command_name": "base_velocity", "std": math.sqrt(0.08)}  # 减少std以提高精度
+        params={"command_name": "base_velocity", "std": 0.5}  # Increased std: 0.28->0.5 for easier learning
     )
 
     # [Fix] 权重从 5.0 降至 1.5
     rew_ang_vel_z_precise = RewTerm(
         func=mdp.track_ang_vel_z_exp,  # 使用现有的角速度追踪函数
         weight=1.5,
-        params={"command_name": "base_velocity", "std": math.sqrt(0.08)}  # 减少std以提高精度
+        params={"command_name": "base_velocity", "std": 0.5}  # Increased std: 0.28->0.5
     )
 
     # 原始的速度追踪奖励（保持作为基础）
