@@ -602,6 +602,7 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         self.dt = env.step_dt
         self.prev_prev_action = None
         self.prev_action = None
+        self.last_episode_length = None
         # self.__name__ = "action_smoothness_penalty"
 
     def __call__(self, env: ManagerBasedRLEnv) -> torch.Tensor:
@@ -616,14 +617,27 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         # Get the current action from the environment's action manager
         current_action = env.action_manager.action.clone()
 
+        # 检测episode重置 - 如果episode_length_buf有任何变小，说明有重置发生
+        # Detect episode resets - if any episode_length_buf decreased, reset was triggered
+        if self.last_episode_length is not None:
+            reset_mask = env.episode_length_buf < self.last_episode_length
+            if reset_mask.any():
+                # 重置发生过的envs的prev_action / Reset prev_action for environments that were reset
+                if self.prev_action is not None:
+                    self.prev_action[reset_mask] = current_action[reset_mask]
+                if self.prev_prev_action is not None:
+                    self.prev_prev_action[reset_mask] = current_action[reset_mask]
+        
+        self.last_episode_length = env.episode_length_buf.clone()
+
         # If this is the first call, initialize the previous actions
         if self.prev_action is None:
-            self.prev_action = current_action
+            self.prev_action = current_action.clone()
             return torch.zeros(current_action.shape[0], device=current_action.device)
 
         if self.prev_prev_action is None:
-            self.prev_prev_action = self.prev_action
-            self.prev_action = current_action
+            self.prev_prev_action = self.prev_action.clone()
+            self.prev_action = current_action.clone()
             return torch.zeros(current_action.shape[0], device=current_action.device)
 
         # Compute the smoothness penalty (first-order difference, not second-order)
@@ -633,8 +647,8 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         penalty = penalty * 0.1
 
         # Update the previous actions for the next call
-        self.prev_prev_action = self.prev_action
-        self.prev_action = current_action
+        self.prev_prev_action = self.prev_action.clone()
+        self.prev_action = current_action.clone()
 
         # Apply a condition to ignore penalty during the first few episodes
         startup_env_mask = env.episode_length_buf < 3
