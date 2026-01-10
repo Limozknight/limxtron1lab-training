@@ -496,7 +496,7 @@ class RewardsCfg:
         weight=1.5,
         params={"command_name": "base_velocity", "std": math.sqrt(0.08)}  # 减少std以提高精度
     )
-    )
+
 
     # 原始的速度追踪奖励（保持作为基础）
     rew_lin_vel_xy = RewTerm(
