@@ -376,11 +376,16 @@ def base_orientation_stability_reward(
     asset: RigidObject = env.scene[asset_cfg.name]
 
     # 从四元数中提取欧拉角 / Extract Euler angles from quaternion
+    # Isaac Lab quaternion format: [x, y, z, w]
     quat = asset.data.root_quat_w
+    x, y, z, w = quat[:, 0], quat[:, 1], quat[:, 2], quat[:, 3]
+    
     # 转换为Roll, Pitch, Yaw / Convert to Roll, Pitch, Yaw
-    roll = torch.atan2(2.0 * (quat[:, 3] * quat[:, 0] + quat[:, 1] * quat[:, 2]),
-                       1.0 - 2.0 * (quat[:, 0] ** 2 + quat[:, 1] ** 2))
-    pitch = torch.asin(2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0]))
+    # Roll: atan2(2*(w*x + y*z), 1 - 2*(x^2 + y^2))
+    roll = torch.atan2(2.0 * (w * x + y * z), 
+                       1.0 - 2.0 * (x ** 2 + y ** 2))
+    # Pitch: asin(2*(w*y - z*x))
+    pitch = torch.asin(torch.clamp(2.0 * (w * y - z * x), -1.0, 1.0))
 
     # 计算姿态稳定性分数 / Compute orientation stability score
     roll_stability = torch.exp(-torch.abs(roll) / max_roll)
