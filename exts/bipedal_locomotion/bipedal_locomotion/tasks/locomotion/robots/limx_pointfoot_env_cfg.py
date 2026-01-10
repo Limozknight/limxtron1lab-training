@@ -642,15 +642,15 @@ class PFTask2And3EnvCfg(PFBlindFlatEnvCfg):
         )
 
         # --- Task 2: 高精度速度追踪 ---
-        # [Fix] 权重数值正常化 / Normalized weights
-        self.rewards.rew_lin_vel_xy_precise.weight = 3.0 # 原10.0
-        self.rewards.rew_ang_vel_z_precise.weight = 2.0 # 原5.0
+        # [Fix] 权重修正为正确值（来自PFTerrainTraversalEnvCfgV2验证） / Corrected to match validated values
+        self.rewards.rew_lin_vel_xy_precise.weight = 5.5 # 从3.0修正为5.5
+        self.rewards.rew_ang_vel_z_precise.weight = 3.2 # 从2.0修正为3.2
 
         # --- Task 3: 姿态恢复 ---
         self.rewards.rew_base_stability.weight = 2.0 # 原10.0
         
-        # 加大摔倒惩罚
-        self.rewards.pen_base_height.weight = -5.0 # 原-15.0
+        # 修正高度惩罚权重（过度惩罚导致机器人宁愿倒地） / Fixed height penalty (excessive punishment caused robot to prefer falling)
+        self.rewards.pen_base_height.weight = -1.0 # 从-5.0修正为-1.0
 
 
 @configclass
