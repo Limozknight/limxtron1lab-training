@@ -543,7 +543,7 @@ class RewardsCfg:
 
     pen_action_smoothness = RewTerm(
         func=mdp.ActionSmoothnessPenalty,  # 动作平滑性惩罚 / Action smoothness penalty
-        weight=-0.04
+        weight=0  # 临时禁用以验证其他部分稳定性 / Temporarily disable to verify other parts
     )
     pen_flat_orientation = RewTerm(
         func=mdp.flat_orientation_l2,  # 平坦朝向L2惩罚 / Flat orientation L2 penalty
