@@ -83,11 +83,55 @@ class PFBlindFlatEnvCfg(PFBaseEnvCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.scene.height_scanner = None
-        self.observations.policy.heights = None
-        self.observations.critic.heights = None
+        # [CRITICAL] 开启高度扫描以保持与后续阶段(Task 3/4)的架构一致性
+        # Enable height scanner to ensure architecture match for resume training
+        # 此时地面是平的，扫描值全为0/Height scan will be zeros on flat ground
+        self.scene.height_scanner = RayCasterCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/base_Link",
+            attach_yaw_only=True,
+            pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.6, 0.6]),
+            debug_vis=False,
+            mesh_prim_paths=["/World/ground"],
+        )
+        self.scene.height_scanner.update_period = self.decimation * self.sim.dt
+
+        # 观测加入高度 (Observation includes heights)
+        self.observations.policy.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+            scale=0.1,
+        )
+        self.observations.critic.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(0.0, 10.0),
+        )
+        # 历史观测 (History)
+        self.observations.obsHistory.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=GaussianNoise(mean=0.0, std=0.01),
+            clip=(0.0, 10.0),
+            scale=0.1,
+        )
 
         self.curriculum.terrain_levels = None
+
+        # [Stage 1 Enhancement] 强化基础行走在平地的精准度
+        # Strict constraints for the "Foundation" policy to avoid learning to spin or drift.
+        self.rewards.rew_lin_vel_xy_precise.weight = 5.0  # Strong velocity tracking
+        self.rewards.rew_ang_vel_z_precise.weight = 5.0   # Strong linearity (No spinning!)
+        
+        # 允许更灵活的脚部动作，防止因为怕惩罚而“拖着脚走” (这会导致侧偏)
+        self.rewards.pen_action_smoothness.weight = -0.05
+        self.rewards.pen_foot_slide = None # Ensure no explicit sliding penalty interferes (if any)
+        
+        # 确保平地练习时，摩擦力不要太低，避免"滑步习得性漂移"
+        self.events.robot_physics_material.params["static_friction_range"] = (0.8, 1.2)
+        self.events.robot_physics_material.params["dynamic_friction_range"] = (0.6, 0.9)
+
 
 
 @configclass
@@ -759,6 +803,13 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         # Increase terrain friction to prevent slipping on slopes (Moderate increase)
         self.scene.terrain.physics_material.static_friction = 2.0
         self.scene.terrain.physics_material.dynamic_friction = 2.0
+
+        # [Straitjacket] 强制仅训练直线行走，禁止转弯/侧移指令！
+        # Force straight line training only! Disable turning/lateral commands.
+        # This simplifies the task significantly: "Just go up straight".
+        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+        self.commands.base_velocity.ranges.heading = (0.0, 0.0)
 
         # 1. 锁定地形为纯楼梯 / Lock terrain to stairs only
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
