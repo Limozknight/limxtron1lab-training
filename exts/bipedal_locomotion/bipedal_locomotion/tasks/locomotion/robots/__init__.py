@@ -267,8 +267,8 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.limx_pointfoot_env_cfg:PFStairTrainingEnvCfg",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:LimXPointFootPPORunnerCfg",
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFStairTrainingEnvCfg,
+        "rsl_rl_cfg_entry_point": limx_pf_task2_3_4_runner_cfg,
     },
 )
 
@@ -277,7 +277,7 @@ gym.register(
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.limx_pointfoot_env_cfg:PFStairTrainingEnvCfg_PLAY",
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:LimXPointFootPPORunnerCfg",
+        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFStairTrainingEnvCfg_PLAY,
+        "rsl_rl_cfg_entry_point": limx_pf_task2_3_4_runner_cfg,
     },
 )
