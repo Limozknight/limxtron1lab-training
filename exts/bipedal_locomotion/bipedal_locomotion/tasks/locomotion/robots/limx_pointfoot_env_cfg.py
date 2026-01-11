@@ -11,6 +11,7 @@ from bipedal_locomotion.tasks.locomotion.cfg.PF.terrains_cfg import (
     STAIRS_TERRAINS_PLAY_CFG,
     MIXED_TERRAINS_CFG,
     MIXED_TERRAINS_PLAY_CFG,
+    MIXED_TERRAINS_HARD_START_CFG,  # Added import
 )
 
 from isaaclab.sensors import RayCasterCfg, patterns
@@ -240,7 +241,9 @@ class PFTerrainTraversalEnvCfgV2(PFBaseEnvCfg):
         self.scene.env_spacing = 3.0
         self.scene.num_envs = 2048
         self.scene.terrain.terrain_type = "generator"
-        self.scene.terrain.terrain_generator = MIXED_TERRAINS_CFG
+        # [Modified] ä½¿ç”¨å›°éš¾èµ·æ­¥åœ°å½¢é…ç½®ï¼Œé€¼è¿«æœºå™¨äººå°½æ—©é€‚åº”æ¥¼æ¢¯
+        # [Modified] Use hard-start terrain config to force robot to adapt to stairs early
+        self.scene.terrain.terrain_generator = MIXED_TERRAINS_HARD_START_CFG 
         # æ˜¯å¦å¯ç”¨è¯¾ç¨‹å­¦ä¹  (Task 2.4 Requirement)
         self.curriculum.terrain_levels = CurrTerm(func=mdp.terrain_levels_vel)
         
@@ -733,3 +736,40 @@ class PFUnifiedEnvCfg_PLAY(PFUnifiedEnvCfg):
         # ä½¿ç”¨æ··åˆåœ°å½¢çš„æµ‹è¯•é…ç½® (å›ºå®šéš¾åº¦) / Use mixed terrain play config (fixed difficulty)
         # è¿™ä¼šè®©å¤§å®¶åˆ†æ•£åœ¨ä¸åŒçš„åœ°å½¢ä¸Š (æ¥¼æ¢¯ã€æ³¢æµªç­‰)
         self.scene.terrain.terrain_generator = MIXED_TERRAINS_PLAY_CFG
+
+
+#############################
+# Â¥Ìİ×¨ÏîÎ¢µ÷»·¾³ / Stairs Fine-tuning Environment
+#############################
+
+@configclass
+class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
+    "Â¥Ìİ×¨ÏîÎ¢µ÷»·¾³ / Stairs Fine-tuning Environment"
+    def __post_init__(self):
+        super().__post_init__()
+        
+        # 1. Ëø¶¨µØĞÎÎª´¿Â¥Ìİ
+        self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
+        
+        # 2. µ÷ÕûÄÑ¶È£ºÈ«ÄÑ¶È¸²¸Ç£¬²»ÉèÃÅ¼÷£¬ÒòÎªÕâÊÇ×¨ÏîÑµÁ·
+        self.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
+        
+        # 3. ½±ÀøÖØµãµ÷Õû£ºÅÀÂ¥ÌİĞèÒª¸ü´óµÄÅ¤¾ØºÍ¸üÇ¿µÄ Z ÖáÔË¶¯ÄÜÁ¦
+        # [Tuning] Allow more torque for climbing
+        self.rewards.pen_joint_torque.weight = -0.00005 
+        # [Tuning] Allow vertical movement (lifting legs)
+        self.rewards.pen_lin_vel_z.weight = -0.5 
+        
+        # 4. ½µµÍËÙ¶ÈÒªÇó£ºÅÀÂ¥Ìİ²»Çó¿ì£¬Ö»ÇóÎÈ
+        self.rewards.rew_lin_vel_xy_precise.weight = 3.0
+
+@configclass
+class PFStairTrainingEnvCfg_PLAY(PFStairTrainingEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.num_envs = 32
+        self.observations.policy.enable_corruption = False
+        self.events.push_robot = None
+        # ²âÊÔÊ±Ê¹ÓÃÂ¥Ìİ²âÊÔµØĞÎ
+        self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG
+

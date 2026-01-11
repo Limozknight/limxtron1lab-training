@@ -685,7 +685,7 @@ class PFEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """后初始化配置 / Post-initialization configuration"""
         self.decimation = 4  # 控制频率降采样 (50Hz -> 12.5Hz) / Control frequency downsampling
-        self.episode_length_s = 20.0  # 每个episode长度20秒 / Episode length 20 seconds
+        self.episode_length_s = 40.0  # [Modified] 每个episode长度从20s增加到40s，给机器人更多时间通过复杂地形 / Increased from 20s to 40s
         self.sim.render_interval = 2 * self.decimation  # 渲染间隔 / Rendering interval
 
         # 仿真设置 / Simulation settings

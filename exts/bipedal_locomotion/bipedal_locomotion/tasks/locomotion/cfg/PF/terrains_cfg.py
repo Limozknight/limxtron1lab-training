@@ -272,3 +272,10 @@ MIXED_TERRAINS_PLAY_CFG.curriculum = False
 MIXED_TERRAINS_PLAY_CFG.difficulty_range = (1.0, 1.0)
 MIXED_TERRAINS_PLAY_CFG.num_rows = 4
 MIXED_TERRAINS_PLAY_CFG.num_cols = 4
+
+# 新增：困难起步的混合地形配置 - 用于强迫机器人面对更高难度的楼梯
+# Added: Mixed Terrain Configuration with Hard Start - forces robot to face harder stairs
+MIXED_TERRAINS_HARD_START_CFG = MIXED_TERRAINS_CFG.copy()
+# 关键修改：训练难度从 40% 起步，不再从 0% 起步
+# Key change: Training difficulty starts from 40% instead of 0%
+MIXED_TERRAINS_HARD_START_CFG.difficulty_range = (0.4, 1.0)
