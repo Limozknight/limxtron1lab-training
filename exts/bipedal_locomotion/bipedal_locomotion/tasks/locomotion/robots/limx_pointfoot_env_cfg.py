@@ -743,7 +743,7 @@ class PFUnifiedEnvCfg_PLAY(PFUnifiedEnvCfg):
 
 @configclass
 class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
-    "楼梯专项训练环境 / Stair Specialist Environment"
+    """楼梯专项训练环境 / Stair Specialist Environment"""
     def __post_init__(self):
         super().__post_init__()
         
