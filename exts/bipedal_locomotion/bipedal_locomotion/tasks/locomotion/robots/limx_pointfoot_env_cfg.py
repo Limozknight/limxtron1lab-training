@@ -777,6 +777,17 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         
         # 4. 降低速度要求 / Lower speed requirements
         self.rewards.rew_lin_vel_xy_precise.weight = 3.0
+        
+        # [EMERGENCY FIX] 机器人全部跪姿倒地不动
+        # 原因：负奖励太多不敢动，或者存活奖励（keep_balance）太高导致"苟活"
+        # 1. 降低高度惩罚，允许它稍微蹲一点也没事（先站起来再说）
+        self.rewards.pen_base_height.weight = -0.5 # 从 -1.0 降低
+        # 2. 也是最关键的：大幅消减被动存活奖励，逼迫它去拿速度分
+        self.rewards.keep_balance.weight = 0.5 # 从 2.0 砍到 0.5
+        # 3. 稍微放松动作平滑性，初学者不要管姿势
+        self.rewards.pen_action_smoothness.weight = -0.02
+        # 4. 给予一个"站立基础分"，只要基座达到一定高度就给分
+        # (需要借用 pen_base_height 的逻辑，但这里我们通过削弱惩罚来间接实现)
 
 @configclass
 class PFStairTrainingEnvCfg_PLAY(PFStairTrainingEnvCfg):
