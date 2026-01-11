@@ -747,6 +747,10 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
     def __post_init__(self):
         super().__post_init__()
         
+        # [Optimization] 这里的计算量比普通地形大得多，降低环境数以恢复训练速度
+        # Mesh terrain collision is expensive. Reduce envs from 2048 to 1024 to speed up FPS.
+        self.scene.num_envs = 1024
+
         # 1. 锁定地形为纯楼梯 / Lock terrain to stairs only
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         
@@ -760,6 +764,10 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         self.rewards.pen_joint_torque.weight = -0.00005 
         # Allow vertical movement (lifting legs)
         self.rewards.pen_lin_vel_z.weight = -0.5 
+
+        # [Correction] 防止转圈：提高角速度追踪权重，强迫走直线
+        # Prevent circling: Increase ang_vel_z tracking weight
+        self.rewards.rew_ang_vel_z_precise.weight = 5.0 # (Was 3.2 in V2)
         
         # 4. 降低速度要求 / Lower speed requirements
         self.rewards.rew_lin_vel_xy_precise.weight = 3.0
