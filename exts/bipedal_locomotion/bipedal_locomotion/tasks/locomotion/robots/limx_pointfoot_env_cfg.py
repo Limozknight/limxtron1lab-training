@@ -755,6 +755,11 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         # 恢复分辨率 0.05，否则会报 Shape Mismatch Error (208 vs 88)
         self.scene.height_scanner.pattern_cfg.resolution = 0.05
 
+        # [Terrain Physics] 提高地形摩擦力，解决坡面打滑问题 (修正为温和值)
+        # Increase terrain friction to prevent slipping on slopes (Moderate increase)
+        self.scene.terrain.physics_material.static_friction = 2.0
+        self.scene.terrain.physics_material.dynamic_friction = 2.0
+
         # 1. 锁定地形为纯楼梯 / Lock terrain to stairs only
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         
@@ -765,24 +770,36 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         
         # 3. 奖励重点调整 / Reward Tuning
         # Allow more torque for climbing
-        self.rewards.pen_joint_torque.weight = -0.00005 
+        # [Optimization] 稍微降低力矩惩罚，允许更大出力 / Reduce torque penalty slightly
+        self.rewards.pen_joint_torque.weight = -0.00004
         # Allow vertical movement (lifting legs)
-        self.rewards.pen_lin_vel_z.weight = -0.5 
+        # [Optimized] 减少垂直速度惩罚，允许爬楼梯时的必然抬升
+        self.rewards.pen_lin_vel_z.weight = -0.1
 
         # [Correction] 防止转圈：提高角速度追踪权重，强迫走直线
         # Prevent circling: Increase ang_vel_z tracking weight
-        # [User Requested] Lowered from 5.0 to 3.0 to balance between stair climbing and general agility
-        self.rewards.rew_ang_vel_z_precise.weight = 3.0 
+        # [Adjusted] Increased to 5.0 for stronger direction holding
+        self.rewards.rew_ang_vel_z_precise.weight = 5.0
         
         # 4. 降低速度要求 / Lower speed requirements
-        self.rewards.rew_lin_vel_xy_precise.weight = 3.0        
+        # [Adjusted] Increased from 3.0 to 4.5 using a moderate value
+        self.rewards.rew_lin_vel_xy_precise.weight = 4.5        
 
 @configclass
 class PFStairTrainingEnvCfg_PLAY(PFStairTrainingEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.scene.num_envs = 32
-        self.observations.policy.enable_corruption = False
+        
+        # [Fix] 强制在整个网格中随机生成，不限制在课程等级中 / Force random spawn across the whole grid
+        self.scene.terrain.max_init_terrain_level = None
+
+        # [Terrain Physics] Play 测试时的摩擦力保持一致 (修正为温和值)
+        # Increase terrain friction for play as well
+        self.scene.terrain.physics_material.static_friction = 2.0
+        self.scene.terrain.physics_material.dynamic_friction = 2.0
+        
+        # 测试时使用混合测试地形，包含所有地形类型 / Test on mixed terrain (stairs, waves, etc.)
+        self.scene.terrain.terrain_generator = MIXEDFalse
         self.events.push_robot = None
         # 测试时使用楼梯测试地形 / Test on stairs
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG
