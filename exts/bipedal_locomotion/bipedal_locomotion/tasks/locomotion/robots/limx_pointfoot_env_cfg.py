@@ -772,7 +772,8 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
 
         # [Correction] 防止转圈：提高角速度追踪权重，强迫走直线
         # Prevent circling: Increase ang_vel_z tracking weight
-        self.rewards.rew_ang_vel_z_precise.weight = 5.0 # (Was 3.2 in V2)
+        # [User Requested] Lowered from 5.0 to 3.0 to balance between stair climbing and general agility
+        self.rewards.rew_ang_vel_z_precise.weight = 3.0 
         
         # 4. 降低速度要求 / Lower speed requirements
         self.rewards.rew_lin_vel_xy_precise.weight = 3.0
