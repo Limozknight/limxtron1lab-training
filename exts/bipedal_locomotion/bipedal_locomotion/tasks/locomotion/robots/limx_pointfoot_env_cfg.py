@@ -737,30 +737,31 @@ class PFUnifiedEnvCfg_PLAY(PFUnifiedEnvCfg):
         # è¿™ä¼šè®©å¤§å®¶åˆ†æ•£åœ¨ä¸åŒçš„åœ°å½¢ä¸Š (æ¥¼æ¢¯ã€æ³¢æµªç­‰)
         self.scene.terrain.terrain_generator = MIXED_TERRAINS_PLAY_CFG
 
-
 #############################
-# Â¥Ìİ×¨ÏîÎ¢µ÷»·¾³ / Stairs Fine-tuning Environment
+# æ¥¼æ¢¯ä¸“é¡¹å¼ºåŒ–ç¯å¢ƒ / Stair Specialist Environment
 #############################
 
 @configclass
 class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
-    "Â¥Ìİ×¨ÏîÎ¢µ÷»·¾³ / Stairs Fine-tuning Environment"
+    "æ¥¼æ¢¯ä¸“é¡¹è®­ç»ƒç¯å¢ƒ / Stair Specialist Environment"
     def __post_init__(self):
         super().__post_init__()
         
-        # 1. Ëø¶¨µØĞÎÎª´¿Â¥Ìİ
+        # 1. é”å®šåœ°å½¢ä¸ºçº¯æ¥¼æ¢¯ / Lock terrain to stairs only
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         
-        # 2. µ÷ÕûÄÑ¶È£ºÈ«ÄÑ¶È¸²¸Ç£¬²»ÉèÃÅ¼÷£¬ÒòÎªÕâÊÇ×¨ÏîÑµÁ·
+        # 2. éš¾åº¦è®¾ç½® / Difficulty
+        # è®¾å®šç”ŸæˆèŒƒå›´ä¸ºå…¨éš¾åº¦ï¼Œè¯¾ç¨‹ç®¡ç†å™¨ä¼šè‡ªåŠ¨ä»ç®€å•(éš¾åº¦0)å¼€å§‹
+        # Start at 0.0 (Easy) -> 1.0 (Hard)
         self.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
         
-        # 3. ½±ÀøÖØµãµ÷Õû£ºÅÀÂ¥ÌİĞèÒª¸ü´óµÄÅ¤¾ØºÍ¸üÇ¿µÄ Z ÖáÔË¶¯ÄÜÁ¦
-        # [Tuning] Allow more torque for climbing
+        # 3. å¥–åŠ±é‡ç‚¹è°ƒæ•´ / Reward Tuning
+        # Allow more torque for climbing
         self.rewards.pen_joint_torque.weight = -0.00005 
-        # [Tuning] Allow vertical movement (lifting legs)
+        # Allow vertical movement (lifting legs)
         self.rewards.pen_lin_vel_z.weight = -0.5 
         
-        # 4. ½µµÍËÙ¶ÈÒªÇó£ºÅÀÂ¥Ìİ²»Çó¿ì£¬Ö»ÇóÎÈ
+        # 4. é™ä½é€Ÿåº¦è¦æ±‚ / Lower speed requirements
         self.rewards.rew_lin_vel_xy_precise.weight = 3.0
 
 @configclass
@@ -770,6 +771,5 @@ class PFStairTrainingEnvCfg_PLAY(PFStairTrainingEnvCfg):
         self.scene.num_envs = 32
         self.observations.policy.enable_corruption = False
         self.events.push_robot = None
-        # ²âÊÔÊ±Ê¹ÓÃÂ¥Ìİ²âÊÔµØĞÎ
+        # æµ‹è¯•æ—¶ä½¿ç”¨æ¥¼æ¢¯æµ‹è¯•åœ°å½¢ / Test on stairs
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG
-
