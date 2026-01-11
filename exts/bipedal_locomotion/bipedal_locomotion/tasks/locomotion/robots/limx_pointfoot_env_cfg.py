@@ -748,8 +748,13 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         super().__post_init__()
         
         # [Optimization] 这里的计算量比普通地形大得多，降低环境数以恢复训练速度
-        # Mesh terrain collision is expensive. Reduce envs from 2048 to 1024 to speed up FPS.
-        self.scene.num_envs = 1024
+        # Mesh terrain collision is expensive. Reduce envs from 2048 to 512 to speed up FPS.
+        self.scene.num_envs = 512
+
+        # [Optimization] 高度扫描在Mesh地形上非常消耗性能，降低扫描分辨率
+        # RayCasting against Mesh is very slow. Reduce resolution 0.05 -> 0.1 (saves ~70% rays)
+        # This brings collection time down significantly.
+        self.scene.height_scanner.pattern_cfg.resolution = 0.1
 
         # 1. 锁定地形为纯楼梯 / Lock terrain to stairs only
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
