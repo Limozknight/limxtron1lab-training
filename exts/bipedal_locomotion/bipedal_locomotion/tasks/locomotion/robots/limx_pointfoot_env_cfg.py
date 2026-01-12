@@ -171,6 +171,10 @@ class PFBlindFlatEnvCfg_PLAY(PFBaseEnvCfg_PLAY):
 
         self.curriculum.terrain_levels = None
 
+        # [Optimized for Play] 增加指令变换间隔，便于人类观察反应
+        # Increase command resampling time for better human observation
+        self.commands.base_velocity.resampling_time_range = (5.0, 8.0)
+
 
 #############################
 # 双足机器人盲视粗糙环境 / Pointfoot Blind Rough Environment
