@@ -126,7 +126,42 @@ tensorboard --logdir=./2026-01-11_18-19-22_Task2-3-4_stair_base_Combov2
 # 根目录下
 python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Unified-Play-v0 --load_run=2026-01-12_10-47-39_Phase3_Stairs --num_envs=32
 ```
+### 快速验证现有模型
 
+目前模型可由[百度网盘](https://pan.baidu.com/s/1BREFKIa-yAelfq6DXb6pCA?pwd=p4xh)下载，需要放置到对应位置
+logs
+└─ rsl_rl
+   └─ pf_tron_1a_flat
+      ├─ flat
+      │  └─ model_3000.pt
+      └─ stair
+         └─ model_9000.pt
+目前百度网盘中zip文件 flat, push, stair 还包含了详细的训练时参数，可供查阅。
+
+启动命令
+
+- 加载平面环境
+
+```bash
+python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Blind-Flat-Play-v0 --load_run=flat --checkpoin-model_3000.pt --num_envs=32
+```
+
+- 加载楼梯环境
+
+```bash
+python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Stair-Training-Play-v0 --load_run=stair --checkpoint=model_9000.pt --num_envs=96
+
+```
+
+- 加载综合环境
+
+```bash
+python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Unified-Play-v0 --load_run=stair --checkpoint=model_9000.pt --num_envs=96
+```
+
+---
+
+## 
 
 
 ## 在Mujoco中运行导出模型（仿真到仿真）/ Running exported model in mujoco (sim2sim)
