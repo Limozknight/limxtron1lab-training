@@ -64,8 +64,15 @@ def main():
 
     # 指定日志实验目录 / Specify directory for logging experiments
     if args_cli.checkpoint_path is None:
+        # [Fix] 尝试相对路径，如果失败则尝试绝对路径（相对于当前文件）
         log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
         log_root_path = os.path.abspath(log_root_path)
+        # 如果相对路径不存在，尝试相对于脚本所在位置的路径
+        if not os.path.exists(log_root_path):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(script_dir))  # 回退到项目根目录
+            log_root_path = os.path.join(project_root, "logs", "rsl_rl", agent_cfg.experiment_name)
+            log_root_path = os.path.abspath(log_root_path)
         print(f"[INFO] Loading experiment from directory: {log_root_path}")
         resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
     else:
