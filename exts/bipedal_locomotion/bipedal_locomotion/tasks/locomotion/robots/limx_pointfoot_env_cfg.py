@@ -139,9 +139,35 @@ class PFBlindFlatEnvCfg_PLAY(PFBaseEnvCfg_PLAY):
     def __post_init__(self):
         super().__post_init__()
         
-        self.scene.height_scanner = None
-        self.observations.policy.heights = None
-        self.observations.critic.heights = None
+        # [CRITICAL Fix] 必须开启高度扫描以匹配训练时的网络结构 (208 dim)
+        # Must enable height scanner to match training network architecture (dim 208)
+        self.scene.height_scanner = RayCasterCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/base_Link",
+            attach_yaw_only=True,
+            pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.6, 0.6]),
+            debug_vis=False,
+            mesh_prim_paths=["/World/ground"],
+        )
+
+        # 即使是平地，也必须有这个Key，否则 load_state_dict 会报错 size mismatch
+        self.observations.policy.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(0.0, 10.0),
+            scale=0.1,
+        )
+        self.observations.critic.heights = ObsTerm(
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            clip=(0.0, 10.0),
+        )
+        # 历史观测也要对齐
+        self.observations.obsHistory.heights = ObsTerm(
+             func=mdp.height_scan,
+             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+             clip=(0.0, 10.0),
+             scale=0.1,
+        )
 
         self.curriculum.terrain_levels = None
 
