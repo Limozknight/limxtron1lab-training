@@ -747,6 +747,13 @@ class PFUnifiedEnvCfg(PFTerrainTraversalEnvCfgV2):
     def __post_init__(self):
         super().__post_init__()
 
+        # --- 0. 速度限制 (全能地形也要保守) ---
+        # [Safety] 限制最高速度，防止全地形跨步太大摔倒
+        self.commands.base_velocity.ranges.lin_vel_x = (0.2, 0.5)
+        # 禁止转向和侧移（就像楼梯训练一样）
+        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+
         # --- 1. 恢复被 V2 关闭的推力 (Task 3) ---
         # 在崎岖地形上被推非常危险，所以这里是顶级难度
         self.events.push_robot = EventTerm(
