@@ -129,6 +129,7 @@ python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Unified-Play-v0 --load_run=20
 ### 快速验证现有模型
 
 目前模型可由[百度网盘](https://pan.baidu.com/s/1BREFKIa-yAelfq6DXb6pCA?pwd=p4xh)下载，需要放置到对应位置
+```
 logs
 └─ rsl_rl
    └─ pf_tron_1a_flat
@@ -136,6 +137,7 @@ logs
       │  └─ model_3000.pt
       └─ stair
          └─ model_9000.pt
+```
 目前百度网盘中zip文件 flat, push, stair 还包含了详细的训练时参数，可供查阅。
 
 启动命令
@@ -199,7 +201,7 @@ python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Unified-Play-v0 --load_run=st
 
 - **复杂地形 / Terrain Environment**:
 
-![play_isaaclab](./media/play_isaaclab.gif)
+![play_isaaclab](./media/stockroad.gif)
 
 
 ## 📚 完整文档 / Complete Documentation
