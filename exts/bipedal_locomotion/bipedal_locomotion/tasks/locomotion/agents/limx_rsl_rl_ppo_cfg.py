@@ -158,3 +158,11 @@ class WF_TRON1AFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         activation = "elu",
         orthogonal_init = False,
     )
+
+#-----------------------------------------------------------------
+# Task 2.5: Pronk Runner Configuration
+#-----------------------------------------------------------------
+@configclass
+class PF_TRON1APronkPPORunnerCfg(PF_TRON1AFlatPPORunnerCfg):
+    experiment_name = "pf_tron_1a_ex_pronk"
+    max_iterations = 10000 
