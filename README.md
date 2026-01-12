@@ -16,39 +16,43 @@
 This repository is used to train and simulate bipedal robots, such as [limxdynamics TRON1](https://www.limxdynamics.com/en/tron1).
 With the help of [Isaac Lab](https://github.com/isaac-sim/IsaacLab), we can train the bipedal robots to walk in different environments, such as flat, rough, and stairs.
 
+在本项目中基本要求来源于SDM5008课程项目：https://iyrna6v2lz.feishu.cn/wiki/XCLMwwHrpiaI60kpblwcOkspnTb
+
+master保留了最原始的分支，能够完成任务2+3+4的代码在分支 [feature/task234new](https://github.com/Limozknight/limxtron1lab-training/tree/feature/task234new) 上
+
 **关键词 / Keywords:** isaaclab, locomotion, bipedal, pointfoot, TRON1
 
-## 安装 / Installation
+## 环境配置 / Environment Initialization
 
-- 【非官方】强烈推荐使用一键安装脚本(pip)！
+- 本项目基本配置环境为 Isaac-sim 4.5 + Isaac-lab 2.1.0
+- 强烈建议使用云平台 [Gradmotion](https://spaces.gradmotion.com/cloudDesktop)进行训练, 相关配置教程可查看 [官方使用手册](https://cwjgfm21di.feishu.cn/docx/Lx4jdTexeofu3kxbjh3ced6XnYe)
 
-   本脚本同时支持Isaacsim v1.4.1和v2.x.x版本。一键脚本可直接安装Isaacsim、Isaaclab以及配套miniconda虚拟环境，已在ubuntu22.04与20.04测试通过，在终端中执行以下命令：
-   ```bash
-   wget -O install_isaaclab.sh https://docs.robotsfan.com/install_isaaclab.sh && bash install_isaaclab.sh
-   ```
-
-   感谢一键安装脚本作者[@fan-ziqi](https://github.com/fan-ziqi)，感谢大佬为机器人社区所做的贡献。该仓库所使用Isaacsim版本为2.1.0，使用一键脚本安装时请选择该版本。
+### 以下是官方环境提供
 
 - 【官方】Isaaclab官网安装
   Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/v2.1.0/source/setup/installation/binaries_installation.html). We recommend using the conda installation as it simplifies calling Python scripts from the terminal. 
 
+
+## quick Start
 
 - 将仓库克隆到Isaac Lab安装目录之外的独立位置（即在`IsaacLab`目录外）：
 
   Clone the repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
 ```bash
-# 选项 1: HTTPS / Option 1: HTTPS
+# 选项 1: 尝试原有未更改项目
 git clone http://8.141.22.226/Bobbin/limxtron1lab.git
 
-# 选项 2: SSH
-git clone git@8.141.22.226:Bobbin/limxtron1lab.git
+# 选项 2 ：克隆本仓库
+git clone -b feature/task234new https://github.com/Limozknight/limxtron1lab-training.git your_folder_name
+cd your_folder_name
+
 ```
 
 ```bash
 # Enter the repository
 conda activate isaaclab
-cd bipedal_locomotion_isaaclab
+cd your_folder_name
 ```
 
 - Using a python interpreter that has Isaac Lab installed, install the library
@@ -64,6 +68,18 @@ cd bipedal_locomotion_isaaclab/rsl_rl
 python -m pip install -e .
 ```
 
+初次可能会遇到问题，逐步执行：
+
+```bash
+pip install -e rsl_rl
+pip uninstall rsl_rl_lib -y
+pip uninstall rsl_rl -y
+pip install -e rsl_rl
+cd rsl_rl
+python -m pip install -e .
+```
+
+
 ## IDE设置（可选）/ Set up IDE (Optional)
 
 要设置IDE，请按照以下说明操作：
@@ -73,37 +89,45 @@ To setup the IDE, please follow these instructions:
 
 - Replace the path in .vscode/settings.json with the Isaaclab and python paths used by the user. This way, when the user retrieves the official functions or variables of Isaaclab, they can directly jump into the definition of the configuration environment code.
 
-## 训练双足机器人智能体 / Training the bipedal robot agent
-
-- 使用`scripts/rsl_rl/train.py`脚本直接训练机器人，指定任务：
-  Use the `scripts/rsl_rl/train.py` script to train the robot directly, specifying the task:
+### 训练
 
 ```bash
-python3 scripts/rsl_rl/train.py --task=Isaac-Limx-PF-Blind-Flat-v0 --headless
+# Task 2.2: 平地速度追踪
+python scripts/train.py --task Isaac-Limx-PF-Blind-Flat-v0 \
+    --headless --max_iterations 3000 --run_name=Phase1_Flat
+
+# Task 2.3: 扰动拒绝（从 Task 2.2 继续）
+python scripts/rsl_rl/train.py --task=Isaac-Limx-PF-Disturbance-Rejection-v0 --headless --run_name=Task23_Push --resume True --load_run=[time_stamp]_Phase1_Flat --checkpoint=model_3000.pt
+
+# Task 2.4: 地形遍历（从 Task 2.3 继续）
+python scripts/rsl_rl/train.py --task=Isaac-Limx-PF-Stair-Training-v0 --headless --run_name=Phase3_Stairs --resume=True --load_run=[time_stamp]_Task23_Push --checkpoint=model_6000.pt
 ```
-
-- 以下参数可用于自定义训练：
-  The following arguments can be used to customize the training:
-    * --headless: 以无渲染模式运行仿真 / Run the simulation in headless mode
-    * --num_envs: 要运行的并行环境数量 / Number of parallel environments to run
-    * --max_iterations: 最大训练迭代次数 / Maximum number of training iterations
-    * --save_interval: 保存模型的间隔 / Interval to save the model
-    * --seed: 随机数生成器的种子 / Seed for the random number generator
-
-## 运行训练好的模型 / Playing the trained model
-
-- 要运行训练好的模型：
-  To play a trained model:
-
-```bash
-python3 scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Blind-Flat-Play-v0 --checkpoint_path=path/to/checkpoint
-```
-
 - 以下参数可用于自定义运行：
   The following arguments can be used to customize the playing:
     * --num_envs: 要运行的并行环境数量 / Number of parallel environments to run
     * --headless: 以无头模式运行仿真 / Run the simulation in headless mode
     * --checkpoint_path: 要加载的检查点路径 / Path to the checkpoint to load
+    * --run_name: 输出文件命名 / Name ouput folder
+    * --resume True/False : 是否由前期模型加载训练 / Whether training using previous model
+    * --load_run ： 加载前期模型文件 / Using previous model
+
+### 生成曲线图
+
+```bash
+# 进入输出文件夹如 pf_tron_1a_flat
+tensorboard --logdir=./2026-01-11_18-19-22_Task2-3-4_stair_base_Combov2
+
+# 点击输出本地地址网页查看
+```
+
+### 训练后运行示例
+
+```bash
+# 根目录下
+python scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Unified-Play-v0 --load_run=2026-01-12_10-47-39_Phase3_Stairs --num_envs=32
+```
+
+
 
 ## 在Mujoco中运行导出模型（仿真到仿真）/ Running exported model in mujoco (sim2sim)
 
@@ -137,15 +161,11 @@ python3 scripts/rsl_rl/play.py --task=Isaac-Limx-PF-Blind-Flat-Play-v0 --checkpo
 - **点足盲目平地 / Pointfoot Blind Flat**:
 
 ![play_isaaclab](./media/play_isaaclab.gif)
-### Mujoco中的仿真 / Simulation in Mujoco
-- **点足盲目平地 / Pointfoot Blind Flat**:
 
-![play_mujoco](./media/play_mujoco.gif)
+- **复杂地形 / Terrain Environment**:
 
-### 真实机器人部署 / Deployment in Real Robot
-- **点足盲目平地 / Pointfoot Blind Flat**:
+![play_isaaclab](./media/play_isaaclab.gif)
 
-![play_mujoco](./media/rl_real.gif)
 
 ## 📚 完整文档 / Complete Documentation
 
@@ -156,13 +176,13 @@ This project includes comprehensive Chinese documentation for developers from be
 ### 🚀 快速开始 / Quick Start
 
 #### 新手必读（按顺序阅读）:
-1. **[训练工作流指南](docs/10_Training_Workflow_Guide.md)** ⭐⭐⭐⭐⭐ - 如何启动训练、查看结果
-2. **[常见问题解答](docs/11_FAQ.md)** ⭐⭐⭐⭐⭐ - 模型输出、视频录制、工时估算、文件修改、GitHub上传
-3. **[任务 2.2 详细指南](docs/07_Task2.2_Detailed_Guide.md)** ⭐⭐⭐⭐⭐ - 平地速度跟随任务（初学者友好）
+1. **[训练工作流指南](docs/05_Training_Workflow_Guide.md)** ⭐⭐⭐⭐⭐ - 如何启动训练、查看结果
+2. **[常见问题解答](docs/06_FAQ.md)** ⭐⭐⭐⭐⭐ - 模型输出、视频录制、工时估算、文件修改、GitHub上传
+
 
 #### 有经验的开发者:
 1. **[架构概览](docs/01_Architecture_Overview.md)** ⭐⭐⭐⭐ - 系统架构和技术细节
-2. **[项目文件结构](docs/05_Project_File_Structure.md)** ⭐⭐⭐⭐ - 完整文件树和修改优先级
+2. **[项目文件结构](docs/04_Project_File_Structure.md)** ⭐⭐⭐⭐ - 完整文件树和修改优先级
 
 ### 📖 完整文档列表
 
@@ -170,31 +190,18 @@ This project includes comprehensive Chinese documentation for developers from be
 - **[00_文档总览](docs/00_Documentation_Summary.md)** - 所有文档的索引
 - **[01_架构概览](docs/01_Architecture_Overview.md)** - 详细的系统架构说明
 - **[02_项目结构](docs/02_Project_Structure.md)** - 项目组织说明
-- **[03_任务实现指南](docs/03_Task_Implementation_Guide.md)** - 如何实现新任务
-- **[04_学习资源](docs/04_Learning_Resources.md)** - 外部学习资源
-- **[05_项目文件结构](docs/05_Project_File_Structure.md)** - Tree格式的完整文件结构
-
-#### 任务指南 / Task Guides (按推荐顺序)
-- **[07_任务2.2详细指南](docs/07_Task2.2_Detailed_Guide.md)** - 平地速度跟随（基础任务）
-- **[09_任务2.3详细指南](docs/09_Task2.3_Detailed_Guide.md)** - 抗干扰鲁棒性（中级任务）
-- **[08_任务2.4详细指南](docs/08_Task2.4_Detailed_Guide.md)** - 复杂地形穿越（高级任务）
+- **[03_学习资源](docs/03_Learning_Resources.md)** - 外部学习资源
+- **[04_项目文件结构](docs/04_Project_File_Structure.md)** - Tree格式的完整文件结构
 
 #### 工作流文档 / Workflow Documentation
-- **[10_训练工作流指南](docs/10_Training_Workflow_Guide.md)** - 完整训练启动和流程
-- **[11_常见问题解答](docs/11_FAQ.md)** - 模型输出、视频录制、工时估算、文件修改等
-- **[12_limx_base_env_cfg_QA](docs/12_limx_base_env_cfg_QA.md)** - `limx_base_env_cfg.py` 配置详解与任务改动指引
+- **[05_训练工作流指南](docs/05_Training_Workflow_Guide.md)** - 完整训练启动和流程
+- **[06_常见问题解答](docs/06_FAQ.md)** - 模型输出、视频录制、工时估算、文件修改等
+- **[07_limx_base_env_cfg_QA](docs/07_limx_base_env_cfg_QA.md)** - `limx_base_env_cfg.py` 配置详解与任务改动指引
 
 ### 🎯 关键问题快速查找
 
-- ❓ **如何启动训练？** → [10_Training_Workflow_Guide.md](docs/10_Training_Workflow_Guide.md)
-- ❓ **训练会输出模型文件吗？** → [11_FAQ.md](docs/11_FAQ.md#q1-任务-22-和-23-会输出模型文件吗)
-- ❓ **支持录制视频吗？** → [11_FAQ.md](docs/11_FAQ.md#q2-训练命令支持输出-video-吗)
-- ❓ **需要多少工时？** → [11_FAQ.md](docs/11_FAQ.md#q3-完成这几个任务大概需要几个工时)
-- ❓ **需要修改哪些文件？** → [11_FAQ.md](docs/11_FAQ.md#q4-主要修改哪些文件)
-- ❓ **如何上传到 GitHub？** → [11_FAQ.md](docs/11_FAQ.md#q5-如何将项目上传到-github)
-- ❓ **任务有依赖关系吗？** → [10_Training_Workflow_Guide.md](docs/10_Training_Workflow_Guide.md#5-任务依赖关系分析)
-- ❓ **不同任务的完成路径？** → [10_Training_Workflow_Guide.md](docs/10_Training_Workflow_Guide.md#6-三种完成路径建议)
-
+- ❓ **如何启动训练？** → [05_Training_Workflow_Guide.md](docs/10_Training_Workflow_Guide.md)
+- ❓ **需要修改哪些文件？** → [07_FAQ.md](docs/11_FAQ.md#q4-主要修改哪些文件)
 ---
 
 ## 致谢 / Acknowledgements
@@ -207,9 +214,5 @@ This project uses the following open-source libraries:
 - [tron1-rl-isaaclab](https://github.com/limxdynamics/tron1-rl-isaaclab)
 
 **贡献者 / Contributors:**
-- Hongwei Xiong 
-- Bobin Wang
-- Wen
-- Haoxiang Luo
-- Junde Guo
+- WU Weizhi
 

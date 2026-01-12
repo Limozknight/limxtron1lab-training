@@ -12,8 +12,6 @@
 
 ```bash
 # 进入项目根目录
-cd "c:\Users\17950\Desktop\everything\IE\SDM5008\limxtron1lab-main (1)\limxtron1lab-main"
-
 # 启动训练（Point Foot 机器人）
 python scripts/rsl_rl/train.py --task Isaac-Limx-PointFoot-v0 --headless
 
