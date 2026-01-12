@@ -1,6 +1,5 @@
-"""此子模块包含可用于LimX Point Foot运动任务的奖励函数 / This sub-module contains the reward functions that can be used for LimX Point Foot's locomotion task.
+"""This sub-module contains the reward functions that can be used for LimX Point Foot's locomotion task.
 
-这些函数可以传递给:class:`isaaclab.managers.RewardTermCfg`对象来指定奖励函数及其参数。
 The functions can be passed to the :class:`isaaclab.managers.RewardTermCfg` object to
 specify the reward function and its parameters.
 """
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 
 
 def stay_alive(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """保持存活奖励 - 给予机器人基本的存在奖励 / Reward for staying alive - gives robot basic existence reward."""
+    """Reward for staying alive - gives robot basic existence reward."""
     return torch.ones(env.num_envs, device=env.device)
 
 
@@ -34,35 +33,35 @@ def foot_landing_vel(
         foot_radius: float,
         about_landing_threshold: float,
 ) -> torch.Tensor:
-    """惩罚高足部着陆速度 - 鼓励轻柔着陆 / Penalize high foot landing velocities - encourages soft landing"""
+    """Penalize high foot landing velocities - encourages soft landing"""
     asset = env.scene[asset_cfg.name]
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
 
-    # 获取足部Z方向速度 / Get foot Z-direction velocities
+    # Get foot Z-direction velocities
     z_vels = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, 2]
 
-    # 检测接触状态 / Detect contact state
+    # Detect contact state
     contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 0.1
 
-    # 计算足部高度（相对于地面）/ Calculate foot height (relative to ground)
+    # Calculate foot height (relative to ground)
     foot_heights = torch.clip(
         asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - foot_radius, 0, 1
-    )  # TODO: 改为相对于地形垂直投影的高度 / TODO: change to height relative to terrain vertical projection
+    )  # TODO: change to height relative to terrain vertical projection
 
-    # 检测即将着陆状态：低高度 + 无接触 + 下降速度 / Detect about-to-land state: low height + no contact + downward velocity
+    # Detect about-to-land state: low height + no contact + downward velocity
     about_to_land = (foot_heights < about_landing_threshold) & (~contacts) & (z_vels < 0.0)
 
-    # 计算着陆速度惩罚 / Calculate landing velocity penalty
+    # Calculate landing velocity penalty
     landing_z_vels = torch.where(about_to_land, z_vels, torch.zeros_like(z_vels))
     reward = torch.sum(torch.square(landing_z_vels), dim=1)
     return reward
 
 
 def joint_powers_l1(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """使用L1核惩罚关节功率 - 鼓励能效 / Penalize joint powers using L1-kernel - encourages energy efficiency"""
-    # 提取使用的数量（启用类型提示）/ Extract the used quantities (to enable type-hinting)
+    """Penalize joint powers using L1-kernel - encourages energy efficiency"""
+    # Extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    # 功率 = 力矩 × 角速度 / Power = Torque × Angular Velocity
+    # Power = Torque * Angular Velocity
     return torch.sum(torch.abs(torch.mul(asset.data.applied_torque, asset.data.joint_vel)), dim=1)
 
 
@@ -255,21 +254,21 @@ def feet_regulation(env: ManagerBasedRLEnv,
                     foot_radius: float,
                     base_height_target: float,
                     ) -> torch.Tensor:
-    """足部调节奖励 - 惩罚足部不当运动 / Foot regulation reward - penalizes improper foot movement"""
+    """Foot regulation reward - penalizes improper foot movement"""
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    # 计算足部高度 / Calculate foot height
+    # Calculate foot height
     feet_height = torch.clip(
         asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - foot_radius, 0, 1
-    )  # TODO: 改为相对于地形垂直投影的高度 / TODO: change to height relative to terrain vertical projection
+    )  # TODO: change to height relative to terrain vertical projection
 
-    # 获取足部XY方向速度 / Get foot XY-direction velocities
+    # Get foot XY-direction velocities
     feet_vel_xy = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2]
 
-    # 高度缩放：足部越低，惩罚权重越大 / Height scaling: lower foot height, higher penalty weight
+    # Height scaling: lower foot height, higher penalty weight
     height_scale = torch.exp(-feet_height / base_height_target)
 
-    # 计算速度平方惩罚，按高度加权 / Calculate velocity squared penalty, weighted by height
+    # Calculate velocity squared penalty, weighted by height
     reward = torch.sum(height_scale * torch.square(torch.norm(feet_vel_xy, dim=-1)), dim=1)
     return reward
 
@@ -300,10 +299,8 @@ def base_com_height(
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
         sensor_cfg: SceneEntityCfg | None = None,
 ) -> torch.Tensor:
-    """惩罚基座高度偏离目标 - 维持期望的站立高度 / Penalize base height deviation from target - maintain desired standing height.
+    """Penalize base height deviation from target - maintain desired standing height.
 
-    注意：对于平坦地形，目标高度在世界坐标系中。对于粗糙地形，
-    传感器读数可以调整目标高度以适应地形。
     Note: For flat terrain, target height is in the world frame. For rough terrain,
     sensor readings can adjust the target height to account for the terrain.
     """
@@ -320,24 +317,24 @@ def base_com_height(
     return torch.abs(asset.data.root_pos_w[:, 2] - adjusted_target_height)
 
 
-# ============= 2.2 新增：精确速度追踪函数 =============
+# ============= 2.2 New: Precise Velocity Tracking Function =============
 def track_lin_vel_xy_exp_precise(
         env: ManagerBasedRLEnv,
         command_name: str,
         std: float,
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """精确的线速度XY追踪奖励 - 使用指数核 / Precise linear velocity XY tracking reward - using exponential kernel.
+    """Precise linear velocity XY tracking reward - using exponential kernel.
 
-    用于2.2任务的更精确速度追踪 / Used for more precise velocity tracking in task 2.2.
+    Used for more precise velocity tracking in task 2.2.
     """
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
-    # 获取命令和实际速度 / Get commands and actual velocities
+    # Get commands and actual velocities
     commands = env.command_manager.get_command(command_name)
     lin_vel_error = commands[:, :2] - asset.data.root_lin_vel_w[:, :2]
 
-    # 使用指数核计算奖励 / Compute reward using exponential kernel
+    # Compute reward using exponential kernel
     error_norm = torch.norm(lin_vel_error, dim=1)
     return torch.exp(-error_norm ** 2 / std ** 2)
 
@@ -348,19 +345,18 @@ def track_ang_vel_z_exp_precise(
         std: float,
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """精确的角速度Z追踪奖励 - 使用指数核 / Precise angular velocity Z tracking reward - using exponential kernel.
+    """Precise angular velocity Z tracking reward - using exponential kernel.
 
-    用于2.2任务的更精确角速度追踪 / Used for more precise angular velocity tracking in task 2.2.
+    Used for more precise angular velocity tracking in task 2.2.
     """
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
-    # 获取命令和实际角速度 / Get commands and actual angular velocities
+    # Get commands and actual angular velocities
     commands = env.command_manager.get_command(command_name)
     ang_vel_error = commands[:, 2] - asset.data.root_ang_vel_w[:, 2]
 
-    # 使用指数核计算奖励 / Compute reward using exponential kernel
+    # Compute reward using exponential kernel
     return torch.exp(-ang_vel_error ** 2 / std ** 2)
-
 
 def base_orientation_stability_reward(
         env: ManagerBasedRLEnv,
@@ -369,52 +365,51 @@ def base_orientation_stability_reward(
         decay_factor: float = 0.8,
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """基座姿态稳定性奖励 - 惩罚过大的Roll/Pitch震荡 / Base orientation stability reward - penalizes excessive Roll/Pitch oscillations.
+    """Base orientation stability reward - penalizes excessive Roll/Pitch oscillations.
 
-    用于2.2任务，鼓励机器人保持稳定姿态 / Used for task 2.2, encourages robot to maintain stable orientation.
+    Used for task 2.2, encourages robot to maintain stable orientation.
     """
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    # 从四元数中提取欧拉角 / Extract Euler angles from quaternion
+    # Extract Euler angles from quaternion
     quat = asset.data.root_quat_w
-    # 转换为Roll, Pitch, Yaw / Convert to Roll, Pitch, Yaw
+    # Convert to Roll, Pitch, Yaw
     roll = torch.atan2(2.0 * (quat[:, 3] * quat[:, 0] + quat[:, 1] * quat[:, 2]),
                        1.0 - 2.0 * (quat[:, 0] ** 2 + quat[:, 1] ** 2))
     
-    # [Fix] 增加 clamp 防止 asin 接收超出 [-1, 1] 的数值导致 NaN
     # [Fix] Added clamp to prevent asin from receiving values outside [-1, 1] causing NaN
     sin_p = 2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0])
     sin_p = torch.clamp(sin_p, -1.0, 1.0)
     pitch = torch.asin(sin_p)
 
-    # 计算姿态稳定性分数 / Compute orientation stability score
+    # Compute orientation stability score
     roll_stability = torch.exp(-torch.abs(roll) / max_roll)
     pitch_stability = torch.exp(-torch.abs(pitch) / max_pitch)
 
-    # 综合稳定性分数 / Combined stability score
+    # Combined stability score
     stability_score = (roll_stability + pitch_stability) / 2.0
 
     return stability_score
 
 
-# ============= 新增：观测相关函数（用于观测项） =============
+# ============= New: Observation Related Functions =============
 def velocity_tracking_error(
         env: ManagerBasedRLEnv,
         command_name: str,
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """计算速度追踪误差 / Compute velocity tracking error.
+    """Compute velocity tracking error.
 
-    用于观测项，提供给Policy网络 / Used for observation term, provided to Policy network.
+    Used for observation term, provided to Policy network.
     """
     asset: RigidObject = env.scene[asset_cfg.name]
     commands = env.command_manager.get_command(command_name)
 
-    # 计算线速度和角速度误差 / Compute linear and angular velocity errors
+    # Compute linear and angular velocity errors
     lin_vel_error = commands[:, :2] - asset.data.root_lin_vel_w[:, :2]
     ang_vel_error = commands[:, 2] - asset.data.root_ang_vel_w[:, 2]
 
-    # 返回误差向量 / Return error vector
+    # Return error vector
     return torch.cat([lin_vel_error, ang_vel_error.unsqueeze(1)], dim=1)
 
 
@@ -423,25 +418,24 @@ def base_orientation_stability(
         window_size: int,
         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """计算基座姿态稳定性指标 / Compute base orientation stability metric.
+    """Compute base orientation stability metric.
 
-    用于观测项，计算Roll/Pitch的震荡幅度 / Used for observation term, computes Roll/Pitch oscillation amplitude.
+    Used for observation term, computes Roll/Pitch oscillation amplitude.
     """
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    # 从四元数中提取欧拉角 / Extract Euler angles from quaternion
+    # Extract Euler angles from quaternion
     quat = asset.data.root_quat_w
     roll = torch.atan2(2.0 * (quat[:, 3] * quat[:, 0] + quat[:, 1] * quat[:, 2]),
                        1.0 - 2.0 * (quat[:, 0] ** 2 + quat[:, 1] ** 2))
     
-    # [Fix] 增加 clamp 防止 asin NaN
     # [Fix] Added clamp to prevent asin NaN
     sin_p = 2.0 * (quat[:, 3] * quat[:, 1] - quat[:, 2] * quat[:, 0])
     sin_p = torch.clamp(sin_p, -1.0, 1.0)
     pitch = torch.asin(sin_p)
 
-    # 在实际实现中，这里需要历史数据来计算震荡幅度 / In actual implementation, historical data is needed to compute oscillation amplitude
-    # 这里简化实现，返回当前姿态角的绝对值 / Simplified implementation, return absolute value of current orientation angles
+    # In actual implementation, historical data is needed to compute oscillation amplitude
+    # Simplified implementation, return absolute value of current orientation angles
     orientation_instability = torch.abs(roll) + torch.abs(pitch)
 
     return orientation_instability
@@ -449,24 +443,25 @@ def base_orientation_stability(
 
 class GaitReward(ManagerTermBase):
     """步态奖励类 - 核心步态控制奖励函数 / Gait reward class - core gait control reward function"""
+Gait reward class - core gait control reward function"""
 
     def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
-        """初始化步态奖励项 / Initialize the gait reward term.
+        """Initialize the gait reward term.
 
         Args:
-            cfg: 奖励配置 / The configuration of the reward.
-            env: RL环境实例 / The RL environment instance.
+            cfg: The configuration of the reward.
+            env: The RL environment instance.
         """
         super().__init__(cfg, env)
 
         self.sensor_cfg = cfg.params["sensor_cfg"]
         self.asset_cfg = cfg.params["asset_cfg"]
 
-        # 提取使用的数量（启用类型提示）/ Extract the used quantities (to enable type-hinting)
+        # Extract the used quantities (to enable type-hinting)
         self.contact_sensor: ContactSensor = env.scene.sensors[self.sensor_cfg.name]
         self.asset: Articulation = env.scene[self.asset_cfg.name]
 
-        # 存储配置参数 / Store configuration parameters
+        # Store configuration parameters
         self.force_scale = float(cfg.params["tracking_contacts_shaped_force"])
         self.vel_scale = float(cfg.params["tracking_contacts_shaped_vel"])
         self.force_sigma = cfg.params["gait_force_sigma"]
@@ -561,7 +556,7 @@ class GaitReward(ManagerTermBase):
         return desired_contact_states
 
     def _compute_force_reward(self, forces: torch.Tensor, desired_contacts: torch.Tensor) -> torch.Tensor:
-        """计算基于力的奖励组件 / Compute force-based reward component."""
+        """Compute force-based reward component."""
         reward = torch.zeros_like(forces[:, 0])
         if self.force_scale < 0:  # Negative scale means penalize unwanted contact
             for i in range(forces.shape[1]):
@@ -573,7 +568,7 @@ class GaitReward(ManagerTermBase):
         return (reward / forces.shape[1]) * self.force_scale
 
     def _compute_velocity_reward(self, velocities: torch.Tensor, desired_contacts: torch.Tensor) -> torch.Tensor:
-        """计算基于速度的奖励组件 / Compute velocity-based reward component."""
+        """Compute velocity-based reward component."""
         reward = torch.zeros_like(velocities[:, 0])
         if self.vel_scale < 0:  # Negative scale means penalize movement during contact
             for i in range(velocities.shape[1]):
@@ -586,9 +581,9 @@ class GaitReward(ManagerTermBase):
 
 
 class ActionSmoothnessPenalty(ManagerTermBase):
-    """动作平滑性惩罚类 - 惩罚网络动作输出的大幅瞬时变化 / Action smoothness penalty class - penalizes large instantaneous changes in network action output.
+    """Action smoothness penalty class - penalizes large instantaneous changes in network action output.
 
-    此惩罚鼓励动作随时间更平滑。/ This penalty encourages smoother actions over time.
+    This penalty encourages smoother actions over time.
     """
 
     def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRLEnv):
@@ -617,12 +612,11 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         # Get the current action from the environment's action manager
         current_action = env.action_manager.action.clone()
 
-        # 检测episode重置 - 如果episode_length_buf有任何变小，说明有重置发生
         # Detect episode resets - if any episode_length_buf decreased, reset was triggered
         if self.last_episode_length is not None:
             reset_mask = env.episode_length_buf < self.last_episode_length
             if reset_mask.any():
-                # 重置发生过的envs的prev_action / Reset prev_action for environments that were reset
+                # Reset prev_action for environments that were reset
                 if self.prev_action is not None:
                     self.prev_action[reset_mask] = current_action[reset_mask]
                 if self.prev_prev_action is not None:
@@ -641,9 +635,9 @@ class ActionSmoothnessPenalty(ManagerTermBase):
             return torch.zeros(current_action.shape[0], device=current_action.device)
 
         # Compute the smoothness penalty (first-order difference, not second-order)
-        # 改为一阶导数而不是二阶，避免极端值 / Changed to first-order to avoid extreme values
+        # Changed to first-order to avoid extreme values
         penalty = torch.sum(torch.square(current_action - self.prev_action), dim=1)
-        # 添加缩放因子防止爆炸 / Add scaling factor to prevent explosion
+        # Add scaling factor to prevent explosion
         penalty = penalty * 0.1
 
         # Update the previous actions for the next call
@@ -658,13 +652,12 @@ class ActionSmoothnessPenalty(ManagerTermBase):
         return penalty
 
 
-# ============= 新增：其他必要的函数 =============
-# 注意：以下函数可能在其他地方有定义，但为了完整性在这里提供简化版本
+# ============= New: Other Necessary Functions =============
 # Note: The following functions may be defined elsewhere, but provided here in simplified version for completeness
 
 def track_lin_vel_xy_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                          asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """线速度XY追踪奖励 - 原始版本 / Linear velocity XY tracking reward - original version."""
+    """Linear velocity XY tracking reward - original version."""
     asset: RigidObject = env.scene[asset_cfg.name]
     commands = env.command_manager.get_command(command_name)
     lin_vel_error = commands[:, :2] - asset.data.root_lin_vel_w[:, :2]
@@ -674,7 +667,7 @@ def track_lin_vel_xy_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
 
 def track_ang_vel_z_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                         asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """角速度Z追踪奖励 - 原始版本 / Angular velocity Z tracking reward - original version."""
+    """Angular velocity Z tracking reward - original version."""
     asset: RigidObject = env.scene[asset_cfg.name]
     commands = env.command_manager.get_command(command_name)
     ang_vel_error = commands[:, 2] - asset.data.root_ang_vel_w[:, 2]
@@ -682,51 +675,51 @@ def track_ang_vel_z_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
 
 
 def lin_vel_z_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """Z方向线速度L2惩罚 / Z-direction linear velocity L2 penalty."""
+    """Z-direction linear velocity L2 penalty."""
     asset: RigidObject = env.scene[asset_cfg.name]
     return torch.square(asset.data.root_lin_vel_w[:, 2])
 
 
 def ang_vel_xy_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """XY方向角速度L2惩罚 / XY-direction angular velocity L2 penalty."""
+    """XY-direction angular velocity L2 penalty."""
     asset: RigidObject = env.scene[asset_cfg.name]
     return torch.sum(torch.square(asset.data.root_ang_vel_w[:, :2]), dim=1)
 
 
 def joint_torques_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """关节力矩L2惩罚 / Joint torques L2 penalty."""
+    """Joint torques L2 penalty."""
     asset: Articulation = env.scene[asset_cfg.name]
     return torch.sum(torch.square(asset.data.applied_torque), dim=1)
 
 
 def joint_acc_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """关节加速度L2惩罚 / Joint acceleration L2 penalty."""
+    """Joint acceleration L2 penalty."""
     asset: Articulation = env.scene[asset_cfg.name]
-    # 注意：可能需要计算关节加速度 / Note: May need to compute joint acceleration
-    return torch.zeros(env.num_envs, device=env.device)  # 简化实现 / Simplified implementation
+    # Note: May need to compute joint acceleration
+    return torch.zeros(env.num_envs, device=env.device)  # Simplified implementation
 
 
 def action_rate_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """动作变化率L2惩罚 / Action rate L2 penalty."""
-    # 这个函数的具体实现依赖于环境如何跟踪动作历史 / Implementation depends on how env tracks action history
-    return torch.zeros(env.num_envs, device=env.device)  # 简化实现 / Simplified implementation
+    """Action rate L2 penalty."""
+    # Implementation depends on how env tracks action history
+    return torch.zeros(env.num_envs, device=env.device)  # Simplified implementation
 
 
 def joint_pos_limits(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """关节位置限制惩罚 / Joint position limits penalty."""
+    """Joint position limits penalty."""
     asset: Articulation = env.scene[asset_cfg.name]
-    # 检查关节位置是否超出限制 / Check if joint positions exceed limits
-    return torch.zeros(env.num_envs, device=env.device)  # 简化实现 / Simplified implementation
+    # Check if joint positions exceed limits
+    return torch.zeros(env.num_envs, device=env.device)  # Simplified implementation
 
 
 def joint_vel_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """关节速度L2惩罚 / Joint velocity L2 penalty."""
+    """Joint velocity L2 penalty."""
     asset: Articulation = env.scene[asset_cfg.name]
     return torch.sum(torch.square(asset.data.joint_vel), dim=1)
 
 
 def undesired_contacts(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
-    """不期望接触惩罚 / Undesired contacts penalty."""
+    """Undesired contacts penalty."""
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     contact_forces = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2]
     undesired = contact_forces > threshold
@@ -734,14 +727,14 @@ def undesired_contacts(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, thres
 
 
 def flat_orientation_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """平坦朝向L2惩罚 / Flat orientation L2 penalty."""
+    """Flat orientation L2 penalty."""
     asset: RigidObject = env.scene[asset_cfg.name]
     quat = asset.data.root_quat_w
-    # 惩罚非垂直朝向 / Penalize non-vertical orientation
-    return torch.square(quat[:, 0]) + torch.square(quat[:, 1])  # 惩罚Roll和Pitch / Penalize Roll and Pitch
+    # Penalize non-vertical orientation
+    return torch.square(quat[:, 0]) + torch.square(quat[:, 1])  # Penalize Roll and Pitch
 
 
-# ============= 新增：平面地形课程学习函数 =============
+# ============= New: Flat Terrain Curriculum Function =============
 def flat_terrain_levels(
         env: ManagerBasedRLEnv,
         env_ids: torch.Tensor | None = None,
@@ -749,34 +742,32 @@ def flat_terrain_levels(
         step_size: float = 0.1,
         max_level: int = 10,
 ) -> torch.Tensor:
-    """平面地形课程学习函数 - 基于性能渐进增加难度 / Flat terrain curriculum function - gradually increase difficulty based on performance.
+    """Flat terrain curriculum function - gradually increase difficulty based on performance.
 
-    由于使用平面地形，这里可以基于追踪精度或抗干扰能力来增加难度。
     Since flat terrain is used, difficulty can be increased based on tracking accuracy or disturbance rejection ability.
     """
-    # 简化实现：返回固定等级或基于性能的等级
-    # 这里可以根据实际训练进度动态调整
+    # Simplified implementation: return fixed level or performance-based level
+    # Can be adjusted dynamically based on actual training progress
     if env_ids is None:
         env_ids = torch.arange(env.num_envs, device=env.device)
 
-    # 获取当前训练进度（可根据需要实现）
-    # 这里简单返回一个固定的等级
+    # Get current training progress (can be implemented as needed)
+    # Return a fixed level for now
     levels = torch.ones(len(env_ids), device=env.device, dtype=torch.int32)
 
     return levels
 
 
-# ============= 2.5 新增：双足跳（Pronk）相关奖励函数 =============
+# ============= 2.5 New: Bipedal Jump (Pronk) Reward Functions =============
 def feet_synchronization(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
-    """双足同步奖励 - 鼓励两脚状态一致 / Feet synchronization reward - encourage both feet to be in the same state.
+    """Feet synchronization reward - encourage both feet to be in the same state.
     
-    用于Pronking（双足跳）步态 / Used for Pronking gait.
+    Used for Pronking gait.
     """
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    # 获取接触状态 (Threshold 1.0N)
+    # Get contact state (Threshold 1.0N)
     contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 1.0
     
-    # 逻辑：如果两脚状态不同（异或为真），则惩罚；相同则奖励
     # Logic: If feet states are different (XOR is true), penalize; if same, reward
     # Assuming 2 feet. contacts shape: (num_envs, 2)
     desync = torch.logical_xor(contacts[:, 0], contacts[:, 1])
@@ -784,27 +775,27 @@ def feet_synchronization(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> 
     return 1.0 - desync.float()
 
 def jump_vertical_velocity(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """跳跃垂直速度奖励 / Jump vertical velocity reward.
+    """Jump vertical velocity reward.
     
-    鼓励向上运动，忽略向下运动 / Encourage upward motion, ignore downward motion.
+    Encourage upward motion, ignore downward motion.
     """
     asset: RigidObject = env.scene[asset_cfg.name]
     z_vel = asset.data.root_lin_vel_w[:, 2]
-    # 仅奖励正向（向上）速度 / Only reward positive (upward) velocity
+    # Only reward positive (upward) velocity
     return torch.clamp(z_vel, min=0.0)
 
 def pronk_air_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
-    """Pronk腾空时间奖励 / Pronk air time reward.
+    """Pronk air time reward.
     
-    仅当两脚同时腾空时给予奖励 / Reward only when BOTH feet are in the air.
+    Reward only when BOTH feet are in the air.
     """
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     contacts = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids, 2] > 1.0
     
-    # 计算接触脚的数量 / Count number of feet in contact
+    # Count number of feet in contact
     num_contacts = torch.sum(contacts.float(), dim=1)
     
-    # 腾空阶段：接触数量为0 / Flight phase: number of contacts is 0
+    # Flight phase: number of contacts is 0
     in_air = (num_contacts == 0)
     
     return in_air.float()
