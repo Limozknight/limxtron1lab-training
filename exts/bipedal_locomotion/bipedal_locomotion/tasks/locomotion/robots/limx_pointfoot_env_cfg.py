@@ -464,16 +464,22 @@ class PFPronkEnvCfg(PFBlindFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         
-        # 1. 修改命令范围：双足跳通常不需要大范围的水平移动，或者只是直线跳
+        # 1. 关键修改：强制双脚同步步态 (Pronk Gait)
+        # 将偏移量都设为0，强制两脚同时触地和抬起
+        self.commands.gait_command.ranges.offsets = (0.0, 0.0)
+        # 自定义跳跃频率，通常 pronk 需要稍慢一点的频率或者特定的爆发频率
+        self.commands.gait_command.ranges.frequencies = (1.5, 2.0)
+        # 调整触地占空比，跳跃通常触地时间短
+        self.commands.gait_command.ranges.durations = (0.3, 0.4)
+
+        # 2. 修改命令范围：双足跳通常不需要大范围的水平移动，或者只是直线跳
         # 这里我们限制为主要是X方向的移动，Y方向和旋转设为0
-        self.commands.ranges.base_velocity.ranges = {
-            "lin_vel_x": (0.0, 1.0),   # 允许向前跳 / Allow forward jump
-            "lin_vel_y": (0.0, 0.0),   # 禁止侧向移动 / No lateral movement
-            "ang_vel_z": (0.0, 0.0),   # 禁止旋转 / No rotation
-            "heading": (0.0, 0.0),
-        }
+        self.commands.base_velocity.ranges.lin_vel_x = (0.0, 1.5)   # 允许向前跳 / Allow forward jump
+        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)   # 禁止侧向移动 / No lateral movement
+        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)   # 禁止旋转 / No rotation
+        self.commands.base_velocity.ranges.heading = (0.0, 0.0)
         
-        # 2. 调整奖励函数 / Adjust rewards
+        # 3. 调整奖励函数 / Adjust rewards
         # 移除/禁用不利于跳跃的平稳行走奖励
         self.rewards.rew_lin_vel_xy_precise = None
         self.rewards.rew_ang_vel_z_precise = None
