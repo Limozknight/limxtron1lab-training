@@ -141,7 +141,7 @@ STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         # é‡‘å­—å¡”æ¥¼æ¢¯ (40%å æ¯”) / Pyramid stairs (40% proportion)
         "pyramid_stairs": MeshPyramidStairsTerrainCfg(
             proportion=0.4,
-            step_height_range=(0.05, 0.20),    # å°é˜¶é«˜åº¦èŒƒå›´ 5-20cm / Step height range 5-20cm
+            step_height_range=(0.05, 0.15),    # [Tuned] é™ä½ä¸Šé™è‡³15cmï¼Œé˜²æ­¢ä¸‹æ¥¼è¿‡çŒ› / Reduced max height to 15cm
             step_width=0.3,                    # å°é˜¶å®½åº¦ 30cm / Step width 30cm
             platform_width=3.0,                # å¹³å°å®½åº¦ 3m / Platform width 3m
             border_width=1.0,                  # è¾¹ç•Œå®½åº¦ / Border width
@@ -273,9 +273,9 @@ MIXED_TERRAINS_PLAY_CFG.difficulty_range = (1.0, 1.0)
 MIXED_TERRAINS_PLAY_CFG.num_rows = 4
 MIXED_TERRAINS_PLAY_CFG.num_cols = 4
 
-# ĞÂÔö£ºÀ§ÄÑÆğ²½µÄ»ìºÏµØĞÎÅäÖÃ - ÓÃÓÚÇ¿ÆÈ»úÆ÷ÈËÃæ¶Ô¸ü¸ßÄÑ¶ÈµÄÂ¥Ìİ
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ğ²½µÄ»ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¸ï¿½ï¿½ï¿½ï¿½Ñ¶Èµï¿½Â¥ï¿½ï¿½
 # Added: Mixed Terrain Configuration with Hard Start - forces robot to face harder stairs
 MIXED_TERRAINS_HARD_START_CFG = MIXED_TERRAINS_CFG.copy()
-# ¹Ø¼üĞŞ¸Ä£ºÑµÁ·ÄÑ¶È´Ó 40% Æğ²½£¬²»ÔÙ´Ó 0% Æğ²½
+# ï¿½Ø¼ï¿½ï¿½Ş¸Ä£ï¿½Ñµï¿½ï¿½ï¿½Ñ¶È´ï¿½ 40% ï¿½ğ²½£ï¿½ï¿½ï¿½ï¿½Ù´ï¿½ 0% ï¿½ï¿½
 # Key change: Training difficulty starts from 40% instead of 0%
 MIXED_TERRAINS_HARD_START_CFG.difficulty_range = (0.4, 1.0)
