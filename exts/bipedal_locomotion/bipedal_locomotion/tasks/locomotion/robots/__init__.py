@@ -44,52 +44,6 @@ gym.register(
 )
 
 #############################
-# PF Terrain Traversal (Task 2.4)
-#############################
-gym.register(
-    id="Isaac-Limx-PF-Terrain-Traversal-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTerrainTraversalEnvCfg,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
-    },
-)
-
-gym.register(
-    id="Isaac-Limx-PF-Terrain-Traversal-Play-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTerrainTraversalEnvCfg_PLAY,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
-    },
-)
-
-#############################
-# PF Terrain Traversal V2 (Task 2.4 Optimized)
-#############################
-gym.register(
-    id="Isaac-Limx-PF-Terrain-Traversal-V2-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTerrainTraversalEnvCfgV2,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
-    },
-)
-
-gym.register(
-    id="Isaac-Limx-PF-Terrain-Traversal-V2-Play-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": limx_pointfoot_env_cfg.PFTerrainTraversalEnvCfgV2_PLAY,
-        "rsl_rl_cfg_entry_point": limx_pf_blind_flat_runner_cfg,
-    },
-)
-
-#############################
 # WF Blind Flat Environment
 #############################
 gym.register(
