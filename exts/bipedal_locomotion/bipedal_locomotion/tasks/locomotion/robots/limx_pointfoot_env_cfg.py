@@ -840,6 +840,8 @@ class PFStairTrainingEnvCfg(PFTerrainTraversalEnvCfgV2):
         self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
         self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
         self.commands.base_velocity.ranges.heading = (0.0, 0.0)
+        # [Safety] 强制限制最高速度，防止下楼冲刺摔倒 / Limit max speed to prevent sprinting down stairs
+        self.commands.base_velocity.ranges.lin_vel_x = (0.2, 0.5)
 
         # 1. 锁定地形为纯楼梯 / Lock terrain to stairs only
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
