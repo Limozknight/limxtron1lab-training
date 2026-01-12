@@ -880,7 +880,7 @@ class PFStairTrainingEnvCfg_PLAY(PFStairTrainingEnvCfg):
         self.scene.terrain.physics_material.dynamic_friction = 2.0
         
         # 测试时使用混合测试地形，包含所有地形类型 / Test on mixed terrain (stairs, waves, etc.)
-        self.scene.terrain.terrain_generator = MIXEDFalse
+        self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG
         self.events.push_robot = None
         # 测试时使用楼梯测试地形 / Test on stairs
         self.scene.terrain.terrain_generator = STAIRS_TERRAINS_PLAY_CFG
